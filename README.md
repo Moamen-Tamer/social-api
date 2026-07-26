@@ -14,9 +14,9 @@
   A production-ready RESTful back-end for a social media platform, built with <strong>TypeScript</strong>, <strong>Express</strong>, and a polyglot persistence layer — PostgreSQL for relational data, MongoDB for posts and comments, and Redis for caching and rate-limiting.
 </p>
 
-<p align="center">
-  <a href="https://moamen-tamer.github.io/social-api/">
-    Live Demo
+<p align="center" target="_blank">
+  <a href="https://moamen-tamer.github.io/social-api/TESTING.html">
+    Live Demo - Click Here
   </a>
 </p>
 

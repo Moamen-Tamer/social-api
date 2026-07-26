@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="https://moamen-tamer.github.io/social-api/TESTING.html">
-    Live Demo - Click Here
+    Testing Manual - Click Here
   </a>
 </p>
 

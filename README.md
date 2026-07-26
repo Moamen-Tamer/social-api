@@ -41,24 +41,24 @@ Social API is a fully layered REST back-end that powers the core features of a s
 ## Architecture
 
 ```
-HTTP Request
-     │
-     ▼
-  Router          (src/routes/)
-     │
-     ▼
-Middleware        (authentication · authorization · rate-limiter · logger)
-     │
-     ▼
-Controller        (src/controllers/)
-     │
-     ▼
-  Service         (src/services/)    ←── business logic lives here
-     │
-     ▼
-Repository        (src/repositories/)
-  │         │
-  ▼         ▼
+     HTTP Request
+          │
+          ▼
+        Router          (src/routes/)
+          │
+          ▼
+      Middleware        (authentication · authorization · rate-limiter · logger)
+          │
+          ▼ 
+      Controller        (src/controllers/)
+          │
+          ▼
+       Service          (src/services/)    ←── business logic lives here
+          │
+          ▼
+      Repository        (src/repositories/)
+      │        │
+      ▼        ▼
 PostgreSQL  MongoDB / Redis
 ```
 

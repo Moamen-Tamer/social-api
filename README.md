@@ -147,7 +147,7 @@ social-api/
 ### Install
 
 ```bash
-git clone https://github.com/your-username/social-api.git
+git clone https://github.com/Moamen-Tamer/social-api.git
 cd social-api
 npm install
 ```

@@ -41,8 +41,7 @@ export const logger = (
         const meaning: string = statusMeaning[status] ?? "Unknown";
 
         console.log(
-            color(`${req.method} ${req.originalUrl} ${status} ${meaning} ${duration}ms`,
-        )
+            color(`${req.method} ${req.originalUrl} ${status} ${meaning} ${duration}ms`)
         );
     })
 

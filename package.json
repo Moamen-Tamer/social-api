@@ -10,8 +10,12 @@
     "check": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:coverage": "jest --coverage --runInBand",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx seeds/seed.ts"
+    "psqlMigrate": "tsx scripts/migrate.ts",
+    "seed": "tsx seeds/seed.ts",
+    "knex": "tsx node_modules/knex/bin/cli.js --knexfile knex.ts",
+    "migrate": "npm run knex -- migrate:latest",
+    "migrate:rollback": "npm run knex -- migrate:rollback",
+    "migrate:status": "npm run knex -- migrate:list"
   },
   "keywords": [
     "social-network",
@@ -24,6 +28,7 @@
     "backend",
     "api",
     "postgresql",
+    "knex",
     "mongodb",
     "redis",
     "jwt",
@@ -44,6 +49,7 @@
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
+    "knex": "^3.3.0",
     "mongoose": "^9.7.4",
     "pg": "^8.22.0"
   },
@@ -61,6 +67,7 @@
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"

@@ -1,0 +1,591 @@
+{
+  "info": {
+    "_postman_id": "dace71cd-5372-40fb-9c2a-346aa2c06231",
+    "name": "social-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51788280"
+  },
+  "item": [
+    {
+      "name": "register - moamen",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"moamen tamer\",\n  \"email\": \"moamenmosa288@gmail.com\",\n  \"password\": \"moamen288*\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login - moamen",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"moamenmosa288@gmail.com\",\r\n    \"password\": \"moamen288*\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "refresh - moamen",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/auth/refresh",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "refresh"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/auth/logout",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login - ahmed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "user account - ahmed",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "6637060d-ac40-473c-bf45-765a7c4667cb"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update bio - ahmed",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"update\": \"Building a social API\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "6637060d-ac40-473c-bf45-765a7c4667cb"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "follow - ahmed => moamen",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"update\": \"Building a social API\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa/follow",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "51103afb-3295-4194-b347-8a4e91afaefa",
+            "follow"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "notifications",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/notifications/",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "notifications",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "read notifications",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/notifications/read",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "notifications",
+            "read"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "follow - ahmed x> moamen",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa/follow",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "51103afb-3295-4194-b347-8a4e91afaefa",
+            "follow"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "followers - ahmed",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb/followers",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "6637060d-ac40-473c-bf45-765a7c4667cb",
+            "followers"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "feed - ahmed",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/feed/",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "feed",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "post - ahmed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"content\": \"My Postman test post\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/posts/",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "post - ahmed",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            "6a6638114d9ec28cfaaa24c3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update post content - ahmed",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"content\": \"My edited Postman test post\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            "6a6638114d9ec28cfaaa24c3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "like a post - ahmed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3/like",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            "6a6638114d9ec28cfaaa24c3",
+            "like"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "unlike a post - ahmed",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3/like",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            "6a6638114d9ec28cfaaa24c3",
+            "like"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "comment on a post - ahmed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"content\": \"A test comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "comments",
+            "6a6638114d9ec28cfaaa24c3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "comment data - ahmed",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "comments",
+            "6a6638114d9ec28cfaaa24c3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete comment - ahmed",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3/6a663a604d9ec28cfaaa24c4",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "comments",
+            "6a6638114d9ec28cfaaa24c3",
+            "6a663a604d9ec28cfaaa24c4"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete post - ahmed",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "posts",
+            "6a6638114d9ec28cfaaa24c3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "users",
+            "51103afb-3295-4194-b347-8a4e91afaefa"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

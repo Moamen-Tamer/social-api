@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage --runInBand",
     "psqlMigrate": "tsx scripts/migrate.ts",
     "seed": "tsx seeds/seed.ts",
-    "knex": "tsx node_modules/knex/bin/cli.js --knexfile knex.ts",
+    "knex": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts",
     "migrate": "npm run knex -- migrate:latest",
     "migrate:rollback": "npm run knex -- migrate:rollback",
     "migrate:status": "npm run knex -- migrate:list"

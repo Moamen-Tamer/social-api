@@ -1,7 +1,4 @@
-import type { PoolClient, QueryResult } from "pg";
-import { pool } from "../connections/postgres.js";
 import { redis } from "../connections/redis.js";
-import type { User } from "../types/blueprints.js";
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import type mongoose from "mongoose";

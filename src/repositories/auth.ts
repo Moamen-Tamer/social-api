@@ -1,5 +1,4 @@
 import { db } from "../connections/knex.js";
-import { pool } from "../connections/postgres.js";
 import type { User } from "../types/blueprints.js";
 
 export const existsByEmail = async (email: string): Promise<boolean> => {

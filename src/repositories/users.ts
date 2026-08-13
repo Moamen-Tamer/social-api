@@ -6,6 +6,8 @@ import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import type mongoose from "mongoose";
 import { makeUserKey } from "../utils/redis.js";
+import { db } from "../connections/knex.js";
+import type { Knex } from "knex";
 
 export const fetchUserRedis = async (userId: string) => {
     const key = makeUserKey(userId);
@@ -18,38 +20,52 @@ export const fetchUserRedis = async (userId: string) => {
 };
 
 export const fetchUserPsql = async (userId: string) => {
-    const { rows } = await pool.query(
-        `SELECT id, username, bio, created_at
-         FROM users
-         WHERE id = $1
-         LIMIT 1`,
-        [userId]
-    );
-
-    return rows[0];
+    return db("users")
+        .select(
+            "id",
+            "username",
+            "bio",
+            "created_at"
+        )
+        .where("id", userId)
+        .first();
 };
 
-export const updateUserBioPsql = async (userId: string, update: string): Promise<QueryResult<User>> => {
-    const result = await pool.query(
-        `UPDATE users
-         SET bio = $1
-         WHERE id = $2
-         RETURNING *`,
-        [update, userId]
-    );
+export const updateUserBioPsql = async (
+    userId: string, 
+    update: string
+) => {
+    const rows = await db("users")
+        .where("id", userId)
+        .update(
+            {
+                bio: update
+            },
+            [
+                "id",
+                "username",
+                "email",
+                "bio",
+                "created_at"
+            ]
+        );
 
-    return result;
+    return { rows };
 };
 
-export const deleteUserAccount = async (userId: string, client: PoolClient): Promise<void> => {
-    await client.query(
-        `DELETE FROM users
-         WHERE id = $1`,
-        [userId]
-    );
+export const deleteUserAccount = async (
+    userId: string, 
+    client: Knex | Knex.Transaction = db
+): Promise<void> => {
+    await client("users")
+        .where("id", userId)
+        .del();
 };
 
-export const deleteUserRelated = async (userId: string, session?: mongoose.mongo.ClientSession): Promise<void> => {
+export const deleteUserRelated = async (
+    userId: string, 
+    session?: mongoose.mongo.ClientSession
+): Promise<void> => {
     await Promise.all([
         Post.deleteMany(
             { authorId: userId },
@@ -62,38 +78,58 @@ export const deleteUserRelated = async (userId: string, session?: mongoose.mongo
     ]);
 };
 
-export const addFollowing = async (follower_id: string, followingId: string) => {
-    const result = await pool.query(
-        `INSERT INTO follows (follower_id, following_id)
-         VALUES ($1, $2)
-         ON CONFLICT (follower_id, following_id) DO NOTHING
-         RETURNING *`,
-        [follower_id, followingId]
-    );
-
-    return result;
+export const addFollowing = async (
+    followerId: string, 
+    followingId: string
+) => {
+    return await db("follows")
+        .insert({
+            follower_id: followerId,
+            following_id: followingId
+        })
+        .onConflict([
+            "follower_id",
+            "following_id"
+        ])
+        .ignore()
+        .returning([
+            "follower_id",
+            "following_id",
+            "created_at"
+        ]);
 };
 
-export const deleteFollowing = async (follower_id: string, followingId: string) => {
-    const result = await pool.query(
-        `DELETE FROM follows
-         WHERE follower_id = $1
-         AND following_id = $2
-         RETURNING *`,
-        [follower_id, followingId]
-    );  
-
-    return result;
+export const deleteFollowing = async (
+    followerId: string, 
+    followingId: string
+) => {
+    return db("follows")
+        .where({
+            follower_id: followerId,
+            following_id: followingId
+        })
+        .del()
+        .returning(["*"]);
 };
 
 export const getFollowers = async (userId: string) => {
-    return await pool.query(
-        `SELECT u.id, u.username, u.bio
-         FROM follows f
-         JOIN users u
-         ON f.follower_id = u.id
-         WHERE f.following_id = $1
-         ORDER BY f.created_at DESC`,
-        [userId]
-    );
+    return db("follows as f")
+        .join(
+            "users as u",
+            "f.follower_id",
+            "u.id"
+        )
+        .select(
+            "u.id",
+            "u.username",
+            "u.bio"
+        )
+        .where(
+            "f.following_id", 
+            userId
+        )
+        .orderBy(
+            "f.created_at", 
+            "desc"
+        );
 };

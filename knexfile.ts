@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import type { Knex } from "knex";
 import "dotenv/config";
 

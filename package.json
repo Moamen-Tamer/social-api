@@ -1,7 +1,7 @@
 {
   "name": "social-api",
-  "version": "1.0.0",
-  "description": "A RESTful social-network API built with Express, PostgreSQL, MongoDB, and Redis.",
+  "version": "2.0.0",
+  "description": "Backend API for social-api — TypeScript, Express 5, PostgreSQL (via Knex), MongoDB, and Redis, built with a layered architecture and JWT auth.",
   "main": "dist/server/server.js",
   "scripts": {
     "dev": "tsx watch src/server/server.ts",

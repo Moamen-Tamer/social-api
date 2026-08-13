@@ -1,5 +1,4 @@
 import { db } from "../connections/knex.js";
-import { pool } from "../connections/postgres.js";
 import { HttpError } from "../errors/HttpError.js";
 
 export const removeAllLikes = async (postId: string): Promise<void> => {

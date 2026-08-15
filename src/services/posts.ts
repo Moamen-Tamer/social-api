@@ -3,7 +3,7 @@ import { cachePost, invalidateFeedCache, invalidatePostCache } from "../reposito
 import { deleteCommentsOnPost, getCommentsOnPost } from "../repositories/comments.js";
 import { getFollowersIds } from "../repositories/follow.js";
 import { createPostMongo, deletePostMongo, editPostMongo, fetchPostRedis, getPostAuthor, getPostMongo } from "../repositories/posts.js";
-import { fetchUserPsql } from "../repositories/users.js";
+import { fetchUserById } from "../repositories/users.js";
 import type { CreatePostInput } from "../types/blueprints.js";
 import type { IPost } from "../models/post.model.js";
 import { addLike, getLikes, removeAllLikes, removeLike } from "../repositories/likes.js";
@@ -34,7 +34,7 @@ export const getPostById = async (postId: string) => {
 
     if (!postData) throw new HttpError(404, "Post not found.");
 
-    const author = await fetchUserPsql(postData.authorId);
+    const author = await fetchUserById(postData.authorId);
 
     if (!author) throw new HttpError(404, "Post author not found.");
 

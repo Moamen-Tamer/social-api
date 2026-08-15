@@ -10,7 +10,7 @@ export const removeAllLikes = async (postId: string): Promise<void> => {
 export const getLikes = async (postId: string): Promise<number> => {
     const result = await db("likes")
         .where("post_id", postId)
-        .count("id as likes_count")
+        .count("* as likes_count")
         .first();
 
     return Number(result?.likes_count ?? 0);

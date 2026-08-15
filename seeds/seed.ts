@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { pool } from "../src/connections/postgres.js";
+import { db } from "../src/connections/knex.js";
 import { connectMongo } from "../src/connections/mongo.js";
 import { redis } from "../src/connections/redis.js";
 import Post from "../src/models/post.model.js";
@@ -59,42 +59,41 @@ async function clearPreviousSeed(): Promise<void> {
         await Promise.all([
             Comment.deleteMany({ postId: { $in: postIds } }),
             Post.deleteMany({ _id: { $in: postIds } }),
-            pool.query("DELETE FROM likes WHERE post_id = ANY($1::text[])", [postIds]),
+            db("likes").whereIn("post_id", postIds).del(),
             redis.del(...postIds.flatMap((id) => [`post:${id}`, `comment:${id}`]))
         ]);
     }
 
-    await pool.query("DELETE FROM notifications WHERE payload->>'seed' = 'true'");
+    await db("notifications").whereRaw("payload->>'seed' = ?", ["true"]).del();
 }
 
 async function seed(): Promise<void> {
     await connectMongo();
     await redis.ping();
-    await pool.query("SELECT 1");
+    await db.raw("SELECT 1");
     await clearPreviousSeed();
 
     const users: SeedUser[] = [];
     for (const [username, email, bio] of people) {
-        const result = await pool.query<SeedUser>(
-            `INSERT INTO users (username, email, password_hash, bio)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (email) DO UPDATE
-             SET username = EXCLUDED.username, password_hash = EXCLUDED.password_hash, bio = EXCLUDED.bio
-             RETURNING id, username, email`,
-            [username, email, passwordHash, bio]
-        );
-        users.push(result.rows[0]!);
+        const [user] = await db<SeedUser>("users")
+            .insert({ username, email, password_hash: passwordHash, bio })
+            .onConflict("email")
+            .merge({ username, password_hash: passwordHash, bio })
+            .returning(["id", "username", "email"]);
+        users.push(user!);
     }
 
     for (let index = 0; index < users.length; index += 1) {
         const follower = users[index]!;
         const following = users[(index + 1) % users.length]!;
         const extraFollowing = users[(index + 7) % users.length]!;
-        await pool.query(
-            `INSERT INTO follows (follower_id, following_id) VALUES ($1, $2), ($1, $3)
-             ON CONFLICT (follower_id, following_id) DO NOTHING`,
-            [follower.id, following.id, extraFollowing.id]
-        );
+        await db("follows")
+            .insert([
+                { follower_id: follower.id, following_id: following.id },
+                { follower_id: follower.id, following_id: extraFollowing.id }
+            ])
+            .onConflict(["follower_id", "following_id"])
+            .ignore();
     }
 
     const posts = [] as Array<{ id: string; authorId: string }>;
@@ -123,10 +122,10 @@ async function seed(): Promise<void> {
         for (const likerOffset of [2, 9, 16]) {
             const liker = users[(index + likerOffset) % users.length]!;
             if (liker.id !== post.authorId) {
-                await pool.query(
-                    "INSERT INTO likes (user_id, post_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-                    [liker.id, post.id]
-                );
+                await db("likes")
+                    .insert({ user_id: liker.id, post_id: post.id })
+                    .onConflict(["user_id", "post_id"])
+                    .ignore();
             }
         }
     }
@@ -134,11 +133,12 @@ async function seed(): Promise<void> {
     for (let index = 0; index < users.length; index += 1) {
         const recipient = users[index]!;
         const actor = users[(index + 4) % users.length]!;
-        await pool.query(
-            `INSERT INTO notifications (user_id, type, payload, is_read)
-             VALUES ($1, 'follow', $2, $3)`,
-            [recipient.id, { seed: true, followerId: actor.id, followerName: actor.username }, index % 3 === 0]
-        );
+        await db("notifications").insert({
+            user_id: recipient.id,
+            type: "follow",
+            payload: { seed: true, followerId: actor.id, followerName: actor.username },
+            is_read: index % 3 === 0
+        });
         await redis.del(`user:${recipient.id}`, `feed:${recipient.id}`, `notifications:${recipient.id}`);
     }
 
@@ -149,5 +149,5 @@ async function seed(): Promise<void> {
 try {
     await seed();
 } finally {
-    await Promise.allSettled([pool.end(), redis.quit(), mongoose.disconnect()]);
+    await Promise.allSettled([db.destroy(), redis.quit(), mongoose.disconnect()]);
 }

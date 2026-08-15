@@ -2,7 +2,7 @@ import { db } from "../connections/knex.js";
 import type { User } from "../types/blueprints.js";
 
 export const existsByEmail = async (email: string): Promise<boolean> => {
-    const user = await db("user")
+    const user = await db("users")
         .select("id")
         .where("email", email)
         .first();
@@ -11,7 +11,7 @@ export const existsByEmail = async (email: string): Promise<boolean> => {
 };
 
 export const existsByUsername = async (username: string): Promise<boolean> => {
-    const user = await db("user")
+    const user = await db("users")
         .select("id")
         .where("username", username)
         .first();

@@ -1,7 +1,7 @@
 jest.mock("mongoose", () => ({ __esModule: true, default: { startSession: jest.fn() } }));
-jest.mock("../src/connections/postgres.js", () => ({ pool: { connect: jest.fn() } }));
+jest.mock("../src/connections/knex.js", () => ({ db: { transaction: jest.fn() } }));
 jest.mock("../src/repositories/users.js", () => ({
-    addFollowing: jest.fn(), deleteFollowing: jest.fn(), deleteUserAccount: jest.fn(), deleteUserRelated: jest.fn(), fetchUserPsql: jest.fn(), fetchUserRedis: jest.fn(), getFollowers: jest.fn(), updateUserBioPsql: jest.fn()
+    addFollowing: jest.fn(), deleteFollowing: jest.fn(), deleteUserAccount: jest.fn(), deleteUserRelated: jest.fn(), fetchUserById: jest.fn(), fetchUserRedis: jest.fn(), getFollowers: jest.fn(), updateUserBio: jest.fn()
 }));
 jest.mock("../src/repositories/cache.js", () => ({ cacheUser: jest.fn(), invalidateFeedCache: jest.fn(), invalidateUserCache: jest.fn(), cachePost: jest.fn(), invalidatePostCache: jest.fn() }));
 jest.mock("../src/repositories/notifications.js", () => ({ publishNotification: jest.fn() }));
@@ -27,7 +27,7 @@ describe("user and post services", () => {
 
     it("rejects an already-existing follow without publishing a notification", async () => {
         (fetchUserRedis as jest.Mock).mockImplementation(async (id: string) => ({ id, username: id === "u1" ? "ahmed_mohamed" : "mariam_hassan" }));
-        (addFollowing as jest.Mock).mockResolvedValue({ rowCount: 0 });
+        (addFollowing as jest.Mock).mockResolvedValue([]);
         await expect(followUserById("u1", "u2")).rejects.toMatchObject({ status: 409 });
         expect(publishNotification).not.toHaveBeenCalled();
     });

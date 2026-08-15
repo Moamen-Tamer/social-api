@@ -16,7 +16,7 @@ export const fetchUserRedis = async (userId: string) => {
     return JSON.parse(user);
 };
 
-export const fetchUserPsql = async (userId: string) => {
+export const fetchUserById = async (userId: string) => {
     return db("users")
         .select(
             "id",
@@ -28,11 +28,11 @@ export const fetchUserPsql = async (userId: string) => {
         .first();
 };
 
-export const updateUserBioPsql = async (
+export const updateUserBio = async (
     userId: string, 
     update: string
 ) => {
-    const rows = await db("users")
+    return db("users")
         .where("id", userId)
         .update(
             {
@@ -47,7 +47,6 @@ export const updateUserBioPsql = async (
             ]
         );
 
-    return { rows };
 };
 
 export const deleteUserAccount = async (

@@ -4,7 +4,10 @@ import { env } from "../config/env.js";
 
 export const connectMongo = async (): Promise<void> => {
     try {
-        await mongoose.connect(env.mongoUri);
+        await mongoose.connect(env.mongoUri, {
+            autoIndex: false,
+            autoCreate: false   
+        });
 
         console.log(chalk.green("MongoDB connected"));
 
@@ -20,4 +23,4 @@ export const connectMongo = async (): Promise<void> => {
 
         process.exit(1);
     }
-}
+};

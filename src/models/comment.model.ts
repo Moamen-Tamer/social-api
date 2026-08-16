@@ -29,11 +29,10 @@ const CommentSchema = new Schema<IComment> (
         timestamps: {
             createdAt: 'createdAt',
             updatedAt: false
-        }
+        },
+        collection: "comments"
     }
 );
-
-CommentSchema.index({ postId: 1, createdAt: -1 });
 
 const Comment: Model<IComment> = mongoose.model("Comment", CommentSchema);
 

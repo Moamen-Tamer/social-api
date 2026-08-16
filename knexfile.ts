@@ -34,7 +34,7 @@ const knexConfig: Record<string, Knex.Config> = {
         },
 
         migrations: {
-            directory: "./migrations",
+            directory: "./migrations/postgres",
             extension: "ts",
             loadExtensions: [".ts"],
         }

@@ -13,7 +13,6 @@ const PostSchema = new Schema<IPost> (
         authorId: {
             type: String,
             required: true,
-            index: true
         },
         content: {
             type: String,
@@ -31,11 +30,10 @@ const PostSchema = new Schema<IPost> (
         timestamps: {
             createdAt: 'createdAt',
             updatedAt: false
-        } 
+        },
+        collection: "posts"
     }
 );
-
-PostSchema.index({ authorId: 1, createdAt: -1 });
 
 const Post: Model<IPost> = mongoose.model("Post", PostSchema);
 

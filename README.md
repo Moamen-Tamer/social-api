@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white" />
   <img src="https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white" />
   <img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" />
+  <img src="https://img.shields.io/badge/migrate--mongo-47A248?style=flat&logo=mongodb&logoColor=white" />
 </p>
 
 <h1 align="center">Social API</h1>
@@ -22,7 +23,7 @@
 </p>
 
 <p align="center">
-  <sub><strong>v2.0.0</strong> — PostgreSQL layer fully migrated from raw <code>pg</code> to Knex</sub>
+  <sub><strong>v2.1.0</strong> — MongoDB collections and indexes now managed by <code>migrate-mongo</code></sub>
 </p>
 
 ---
@@ -47,7 +48,9 @@
 
 Social API is a fully layered REST back-end that powers the core features of a social media application — user accounts, follow relationships, a personalised feed, posts, comments, likes, and notifications. The architecture follows a clean **Repository → Service → Controller** pattern, keeping business logic decoupled from HTTP handling and data access.
 
-**v2.0.0** migrates the entire PostgreSQL layer from raw `pg` to **Knex** — schema migrations, seeds, and query building are now handled through Knex, replacing the hand-written SQL migration runner from v1.
+**v2.0.0** migrated the entire PostgreSQL layer from raw `pg` to **Knex** — schema migrations, seeds, and query building are now handled through Knex, replacing the hand-written SQL migration runner from v1.
+
+**v2.1.0** brings the same discipline to the document layer: MongoDB collections and indexes are now created and versioned through **migrate-mongo** instead of Mongoose's implicit `autoIndex`/`autoCreate` behaviour. Postgres migrations were also moved into `migrations/postgres/` so both migration sources sit side by side under `migrations/`.
 
 ---
 
@@ -75,8 +78,8 @@ Social API is a fully layered REST back-end that powers the core features of a s
 PostgreSQL  MongoDB / Redis
 ```
 
-- **PostgreSQL** — users, follows, likes, notifications (relational, strongly typed)
-- **MongoDB** — posts, comments (document model, flexible schema via Mongoose)
+- **PostgreSQL** — users, follows, likes, notifications (relational, strongly typed) — schema managed by **Knex** migrations
+- **MongoDB** — posts, comments (document model via Mongoose) — collections and indexes managed by **migrate-mongo** migrations, not Mongoose's auto-magic
 - **Redis** — feed caching, refresh-token store, rate-limit counters
 
 ---
@@ -89,7 +92,7 @@ PostgreSQL  MongoDB / Redis
 | Language | TypeScript (strict mode) |
 | Framework | Express.js |
 | Relational DB | PostgreSQL (Knex — schema builder, migrations & queries) |
-| Document DB | MongoDB (Mongoose) |
+| Document DB | MongoDB (Mongoose ODM + migrate-mongo for schema/index migrations) |
 | Cache / Queue | Redis (`ioredis`) |
 | Auth | JWT (access + refresh cookies, HTTP-only) |
 | Testing | Jest + `ts-jest` |
@@ -110,7 +113,7 @@ PostgreSQL  MongoDB / Redis
 - **Rate limiting** — per-IP request throttling via `express-rate-limit` backed by Redis
 - **Error handling** — custom `HttpError` class, centralised error middleware, and a `notFound` catch-all
 - **Request logging** — Morgan HTTP logger
-- **Database migrations** — TypeScript migrations managed by Knex, with schema-level constraints (composite keys, foreign keys, checks) enforced at the database layer
+- **Database migrations** — PostgreSQL: TypeScript migrations managed by Knex, with schema-level constraints (composite keys, foreign keys, checks) enforced at the database layer. MongoDB: JS migrations managed by migrate-mongo, creating collections and indexes explicitly instead of relying on Mongoose's `autoIndex`/`autoCreate`
 - **Seed data** — Knex seed files for local development
 
 ---
@@ -119,9 +122,12 @@ PostgreSQL  MongoDB / Redis
 
 ```
 social-api/
-├── migrations/              # Knex migrations (TypeScript) — PostgreSQL schema
+├── migrations/
+│   ├── postgres/             # Knex migrations (TypeScript) — PostgreSQL schema
+│   └── mongo/                # migrate-mongo migrations (JS) — MongoDB collections & indexes
 ├── seeds/                   # Knex seed files — development seed data
 ├── knexfile.ts              # Knex configuration (dev/prod connections)
+├── migrate-mongo-config.js  # migrate-mongo configuration (connection, migrations dir)
 ├── src/
 │   ├── config/              # Cookie options, environment variable validation
 │   ├── connections/         # DB connection factories (postgres, mongo, redis)
@@ -175,7 +181,7 @@ cp .env.example .env
 ### Build & Run
 
 ```bash
-# Development (ts-node)
+# Development (tsx watch)
 npm run dev
 
 # Production build
@@ -191,33 +197,64 @@ Copy `.env.example` and fill in each value:
 
 | Variable | Description |
 |---|---|
-| `PORT` | Server port (default `3000`) |
-| `POSTGRES_URL` | PostgreSQL connection string |
-| `MONGO_URL` | MongoDB connection URI |
-| `REDIS_URL` | Redis connection URL |
-| `ACCESS_TOKEN_SECRET` | JWT secret for access tokens |
-| `REFRESH_TOKEN_SECRET` | JWT secret for refresh tokens |
 | `NODE_ENV` | `development` or `production` |
+| `SERVER_PORT` | Server port (default `3000`) |
+| `DB_HOST` | PostgreSQL host |
+| `DB_PORT` | PostgreSQL port |
+| `DB_USER` | PostgreSQL user |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DB_DATABASE` | PostgreSQL database name |
+| `MONGO_URI` | MongoDB connection URI |
+| `REDIS_URL` | Redis connection URL |
+| `ACCESS_KEY_SECRET` | JWT secret for access tokens |
+| `REFRESH_KEY_SECRET` | JWT secret for refresh tokens |
+| `ACCESS_KEY_EXPIRY` | Access token lifetime (e.g. `15m`) |
+| `REFRESH_KEY_EXPIRY` | Refresh token lifetime (e.g. `7d`) |
+| `REFRESH_TOKEN_TTL_SECONDS` | Refresh token TTL in Redis, in seconds |
 
 ---
 
 ## Running Migrations & Seeds
 
-Migrations and seeds are managed by the Knex CLI, configured in `knexfile.ts`.
+PostgreSQL migrations and seeds are managed by the Knex CLI, configured in `knexfile.ts`. MongoDB migrations are managed separately by `migrate-mongo`, configured in `migrate-mongo-config.js`. Both live under `migrations/`, split into `postgres/` and `mongo/`.
+
+### PostgreSQL (Knex)
 
 ```bash
 # Run all pending migrations
-npx knex migrate:latest
+npm run migrate
+# or: npx knex migrate:latest
 
 # Roll back the most recent migration batch
-npx knex migrate:rollback
+npm run migrate:rollback
+
+# Check migration status
+npm run migrate:status
 
 # Create a new migration file
-npx knex migrate:make migration_name
+npm run knex -- migrate:make migration_name
 
 # Seed the database with sample users and posts
-npx knex seed:run
+npm run seed
 ```
+
+### MongoDB (migrate-mongo)
+
+```bash
+# Run all pending migrations (creates collections & indexes)
+npm run migrate:mongodb:up
+
+# Roll back the last applied migration
+npm run migrate:mongodb:down
+
+# Check migration status
+npm run migrate:mongodb:status
+
+# Create a new migration file
+npm run migrate:mongodb:create -- migration_name
+```
+
+Mongoose connects with `autoIndex: false` and `autoCreate: false`, so collections and indexes only exist once these migrations have been run — there's no implicit schema sync on app startup.
 
 The seed script creates two test accounts:
 

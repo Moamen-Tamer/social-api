@@ -12,17 +12,35 @@ let server: Server | undefined;
 async function closeConnection(): Promise<void> {
     console.log(chalk.yellow("Closing Connection..."));
 
-    try {
-        if (server) {
-            await new Promise<void> ((resolve, reject) => {
-                server!.close((error: Error | undefined) => (error ? reject(error) : resolve()));
-            });
-        }
-    } catch {}
+    if (server) {
+        try{
+            server.closeIdleConnections()
 
-    try { await db.destroy(); } catch {}
-    try { await redis.quit(); } catch {}
-    try { await mongoose.disconnect(); } catch {}
+            await new Promise<void> ((resolve, reject) => {
+                server!.close((error) => (error? reject(error) : resolve()));
+            });
+        } catch (error) {
+            console.error(chalk.red("Error closing HTTP server:"), error);
+        }
+    }
+
+    try { 
+        await db.destroy(); 
+    } catch (error) {
+        console.error(chalk.red("Error closing Postgres:"), error);
+    }
+
+    try { 
+        await redis.quit(); 
+    } catch (error) {
+        console.error(chalk.red("Error closing Redis:"), error);
+    }
+
+    try { 
+        await mongoose.disconnect(); 
+    } catch (error) {
+        console.error(chalk.red("Error closing MongoDB:"), error);
+    }
 
     console.log(chalk.green("All connections closed."));
 };
@@ -37,8 +55,11 @@ async function shutdown(signal: string): Promise<void> {
 export async function startServer(): Promise<void> {
     try {
         await connectMongo();
+
         await redis.ping();
-        await db.raw("SELECT 1");
+
+        await db.raw("SELECT 1")
+        console.log(chalk.green("Postgres connected"));
 
         server = app.listen(env.serverPort, () => {
             console.log(chalk.green(`Server running on port ${env.serverPort}`));

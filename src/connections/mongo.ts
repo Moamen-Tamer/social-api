@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import chalk from 'chalk';
 import { env } from "../config/env.js";
+import { logger } from "../config/logger.js";
 
 mongoose.connection.on("disconnected", () => {
-    console.warn(chalk.yellow("MongoDB disconnected"));
+    logger.warn("MongoDB disconnected");
 });
 
 mongoose.connection.on("error", (error: Error) => {
-    console.error(chalk.red("MongoDB error:"), error.message);
+    logger.error({ err: error }, "MongoDB error");
 });
 
 export const connectMongo = async (): Promise<void> => {
@@ -16,5 +16,5 @@ export const connectMongo = async (): Promise<void> => {
         autoCreate: false   
     });
 
-    console.log(chalk.green("MongoDB connected"));
+    logger.info("MongoDB (Atlas) connected");
 };

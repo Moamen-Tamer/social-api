@@ -1,13 +1,6 @@
-import chalk from "chalk";
-import type { Request, Response, NextFunction } from "express";
-
-const methodColor: Record<string, (text: string) => string> = {
-    GET: chalk.green,
-    POST: chalk.blue,
-    PATCH: chalk.magenta,
-    PUT: chalk.yellow,
-    DELETE: chalk.red
-};
+import { pinoHttp } from "pino-http";
+import { logger as baseLogger } from "../config/logger.js";
+import type { Request, Response } from "express";
 
 const statusMeaning: Record<number, string> = {
     200: "OK",
@@ -27,23 +20,23 @@ const statusMeaning: Record<number, string> = {
     500: "Internal Server Error"
 };
 
-export const logger = (
-    req: Request, 
-    res: Response, 
-    next: NextFunction
-): void => {
-    const color = methodColor[req.method] ?? chalk.white;
-    const start: number = Date.now();
+export const describe = (method: string | undefined, url: string | undefined, status: number) => {
+    const meaning = statusMeaning[status] ?? "unknown";
 
-    res.on("finish", () => {
-        const duration: number = Date.now() - start;
-        const status: number = res.statusCode;
-        const meaning: string = statusMeaning[status] ?? "Unknown";
-
-        console.log(
-            color(`${req.method} ${req.originalUrl} ${status} ${meaning} ${duration}ms`)
-        );
-    })
-
-    next();
+    return `${method ?? "?"} ${url ?? "?"} ${status} ${meaning}`;
 };
+
+export const logger = pinoHttp({
+    logger: baseLogger,
+
+    customLogLevel: (req: Request, res: Response, error: Error | undefined) => {
+        if (error || res.statusCode >= 500) return "error";
+        if (res.statusCode >= 400) return "warn";
+
+        return "info"
+    },
+
+    customSuccessMessage: (req: Request, res: Response) => describe(req.method, req.url, res.statusCode),
+
+    customErrorMessage: (req: Request, res: Response, error: Error) => `${describe(req.method, req.url, res.statusCode)} - ${error.message}`
+});

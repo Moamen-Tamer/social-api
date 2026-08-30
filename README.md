@@ -1,19 +1,20 @@
 <p align="center">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" />
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/Knex.js-D26B38?style=flat&logo=knexdotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white" />
-  <img src="https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/Express_5-000000?style=flat&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redis_Cloud-FF4438?style=flat&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/Zod_v4-3068B7?style=flat&logo=zod&logoColor=white" />
+  <img src="https://img.shields.io/badge/Pino-7B42BC?style=flat&logo=pino&logoColor=white" />
   <img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" />
-  <img src="https://img.shields.io/badge/migrate--mongo-47A248?style=flat&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Helmet-6C2BD9?style=flat&logo=helmet&logoColor=white" />
 </p>
 
 <h1 align="center">Social API</h1>
 
 <p align="center">
-  A production-ready RESTful back-end for a social media platform, built with <strong>TypeScript</strong>, <strong>Express</strong>, and a polyglot persistence layer — PostgreSQL for relational data, MongoDB for posts and comments, and Redis for caching and rate-limiting.
+  A production-ready RESTful back-end for a social media platform — <strong>TypeScript</strong>, <strong>Express 5</strong>, three managed cloud databases, and <strong>Supabase Auth</strong> handling the entire auth lifecycle.
 </p>
 
 <p align="center">
@@ -23,7 +24,7 @@
 </p>
 
 <p align="center">
-  <sub><strong>v2.1.0</strong> — MongoDB collections and indexes now managed by <code>migrate-mongo</code></sub>
+  <sub><strong>v3.0.0</strong> — Supabase Auth, Supabase migrations with RLS, Express 5, Helmet, pino-http, Zod v4</sub>
 </p>
 
 ---
@@ -46,41 +47,53 @@
 
 ## Overview
 
-Social API is a fully layered REST back-end that powers the core features of a social media application — user accounts, follow relationships, a personalised feed, posts, comments, likes, and notifications. The architecture follows a clean **Repository → Service → Controller** pattern, keeping business logic decoupled from HTTP handling and data access.
+Social API is a fully layered REST back-end that powers the core features of a social media application — user accounts, follow relationships, a personalised feed, posts, comments, likes, and notifications. It follows a clean **Repository → Service → Controller** pattern, keeping business logic decoupled from HTTP handling and data access.
 
-**v2.0.0** migrated the entire PostgreSQL layer from raw `pg` to **Knex** — schema migrations, seeds, and query building are now handled through Knex, replacing the hand-written SQL migration runner from v1.
+I didn't set out to build anything flashy. This project exists because I wanted a real place to practice things that most tutorials only scratch the surface of: polyglot persistence (using the right database for the right job), clean layered architecture that actually holds up as complexity grows, and offloading auth to a proper provider instead of rolling my own JWT logic.
 
-**v2.1.0** brings the same discipline to the document layer: MongoDB collections and indexes are now created and versioned through **migrate-mongo** instead of Mongoose's implicit `autoIndex`/`autoCreate` behaviour. Postgres migrations were also moved into `migrations/postgres/` so both migration sources sit side by side under `migrations/`.
+### How it evolved
+
+- **v1.0.0** — I started with raw `pg` for Postgres and let Mongoose implicitly create whatever collections and indexes it needed on connect. Migration files were hand-written SQL run through a custom `script.ts`. Auth was custom JWT with `jsonwebtoken`. It worked, but nothing was reviewable or repeatable.
+
+- **v2.0.0** — Moved the Postgres layer onto **Knex**. Schema migrations, seeds, and query building all went through a proper schema builder instead of hand-rolled SQL. Every schema change became a tracked, reviewable migration file.
+
+- **v2.1.0** — Applied the same discipline to MongoDB. Turned off Mongoose's `autoIndex`/`autoCreate` and let **migrate-mongo** own every collection and index. Cleaned up connect/disconnect handling so each data store logs its own lifecycle state.
+
+- **v3.0.0** — The big one. Replaced Knex and raw Postgres with **Supabase** for the relational layer — queries now go through the Supabase client, and the schema lives in SQL migration files managed by the Supabase CLI with **Row Level Security** enabled on every table. Auth went from custom JWT signing to **Supabase Auth** (signUp, signInWithPassword, session refresh, admin signOut — all handled by Supabase). Upgraded to **Express 5**, added **Helmet** for security headers, replaced Morgan with **pino-http** for consistent structured logging, moved to **Zod v4**, and switched from `ts-jest` to **@swc/jest** for faster test runs.
 
 ---
 
 ## Architecture
 
 ```
-     HTTP Request
-          │
-          ▼
-        Router          (src/routes/)
-          │
-          ▼
-      Middleware        (authentication · authorization · rate-limiter · logger)
-          │
-          ▼ 
-      Controller        (src/controllers/)
-          │
-          ▼
-       Service          (src/services/)    ←── business logic lives here
-          │
-          ▼
-      Repository        (src/repositories/)
-      │        │
-      ▼        ▼
-PostgreSQL  MongoDB / Redis
+             HTTP Request
+                  │
+                  ▼
+                Router                (src/routes/)
+                  │      
+                  ▼      
+              Middleware              (authentication · authorization · rate-limiter · Pino request logger · Zod validate())
+                  │      
+                  ▼      
+              Controller              (src/controllers/)
+                  │      
+                  ▼      
+               Service                (src/services/)    <<--- business logic lives here
+                  │
+                  ▼
+      ┌------Repository-------┐       (src/repositories/)
+      │           │           │
+      ▼           ▼           ▼
+   Supabase    MongoDB      Redis
+  ( Postgres    Atlas       Cloud
+   + Auth )
 ```
 
-- **PostgreSQL** — users, follows, likes, notifications (relational, strongly typed) — schema managed by **Knex** migrations
-- **MongoDB** — posts, comments (document model via Mongoose) — collections and indexes managed by **migrate-mongo** migrations, not Mongoose's auto-magic
-- **Redis** — feed caching, refresh-token store, rate-limit counters
+Each layer has one job. Controllers parse the request and call a service. Services contain the business logic and delegate data access to repositories. Repositories talk to the databases — that's it. Nothing leaks across boundaries.
+
+- **Supabase (PostgreSQL + Auth)** — users, follows, likes, notifications, and the entire auth lifecycle. Relational data lives in Postgres tables with UUID primary keys, composite keys, check constraints, foreign keys, and RLS policies — all defined in versioned SQL migration files. Auth (register, login, refresh, logout, session validation, user deletion) is handled entirely by Supabase Auth — the API just passes cookies back and forth.
+- **MongoDB Atlas** — posts and comments. Document-shaped data that fits naturally in a document store. Collections and indexes are explicitly versioned through **migrate-mongo** — Mongoose's `autoIndex` and `autoCreate` are both off.
+- **Redis Cloud** — caching layer for users, posts, comments, feeds, and notifications, each with its own key namespace and TTL. Also handles rate-limit counters via `express-rate-limit`.
 
 ---
 
@@ -90,31 +103,36 @@ PostgreSQL  MongoDB / Redis
 |---|---|
 | Runtime | Node.js |
 | Language | TypeScript (strict mode) |
-| Framework | Express.js |
-| Relational DB | PostgreSQL (Knex — schema builder, migrations & queries) |
-| Document DB | MongoDB (Mongoose ODM + migrate-mongo for schema/index migrations) |
-| Cache / Queue | Redis (`ioredis`) |
-| Auth | JWT (access + refresh cookies, HTTP-only) |
-| Testing | Jest + `ts-jest` |
-| Linting & Build | TypeScript compiler (`tsc`) |
+| Framework | Express 5 |
+| Security | Helmet |
+| Relational DB + Auth | Supabase (PostgreSQL + Auth) — SQL migrations with RLS |
+| Document DB | MongoDB Atlas (Mongoose ODM + migrate-mongo for collections/indexes) |
+| Cache | Redis Cloud (`ioredis`) |
+| Validation | Zod v4 (request bodies, env vars) + express-validator |
+| Logging | Pino + pino-http (structured HTTP logging) |
+| Testing | Jest + @swc/jest |
+| Build | TypeScript compiler (`tsc`) + tsx (dev) |
 
 ---
 
 ## Features
 
-- **Authentication** — register, login, logout, and silent token refresh using a dual-token strategy (short-lived access token + long-lived refresh token, both as HTTP-only cookies)
-- **Users** — public profiles, bio updates, account deletion
-- **Follow system** — follow / unfollow, follower lists, stored in PostgreSQL with a composite primary key and a check constraint preventing self-follows
-- **Feed** — personalised feed built from followed users' posts; Redis-cached for performance
-- **Posts** — full CRUD for post content, stored in MongoDB
-- **Likes** — like / unlike posts; duplicate likes return `409 Conflict`
-- **Comments** — create, read, and delete comments on posts (MongoDB)
-- **Notifications** — auto-generated on follow and like events; mark-all-as-read and bulk retrieval
-- **Rate limiting** — per-IP request throttling via `express-rate-limit` backed by Redis
-- **Error handling** — custom `HttpError` class, centralised error middleware, and a `notFound` catch-all
-- **Request logging** — Morgan HTTP logger
-- **Database migrations** — PostgreSQL: TypeScript migrations managed by Knex, with schema-level constraints (composite keys, foreign keys, checks) enforced at the database layer. MongoDB: JS migrations managed by migrate-mongo, creating collections and indexes explicitly instead of relying on Mongoose's `autoIndex`/`autoCreate`
-- **Seed data** — Knex seed files for local development
+- **Authentication** — fully delegated to **Supabase Auth**. Register creates an Auth user (which triggers a Postgres function that auto-inserts a public profile row), login returns Supabase session tokens as HTTP-only cookies, and token refresh is a single call to `supabase.auth.refreshSession()`. Logout revokes the session server-side via `supabase.auth.admin.signOut()`. No custom JWT signing, no token secrets in `.env` — Supabase handles all of it.
+- **Users** — public profiles (fetched from Supabase), bio updates, and account deletion (cascades through Auth → public profile → MongoDB posts/comments → Supabase likes/follows/notifications).
+- **Follow system** — follow / unfollow with follower lists, stored in Supabase with a composite primary key (`follower_id`, `following_id`) and a check constraint that prevents self-follows at the database level. An `onConflict: "follower_id, following_id"` upsert keeps things idempotent.
+- **Feed** — a personalised feed built from followed users' posts, cached in Redis with a `feed:{userId}` key. Cache is invalidated whenever a followed user creates, edits, or deletes a post.
+- **Posts** — full CRUD stored in MongoDB Atlas. Supports content, optional media URLs, and tags. Posts are enriched at read time with author profiles (from Supabase), comments (from MongoDB), and like counts (from Supabase).
+- **Likes** — like / unlike posts. Stored in Supabase with a composite primary key (`user_id`, `post_id`). Duplicate likes hit the unique constraint and return `409 Conflict`. Post deletion cascades and removes all associated likes.
+- **Comments** — create, read, and delete on posts (MongoDB). Deletion is scoped to the comment author.
+- **Notifications** — auto-generated on follow and like events, stored in Supabase with a `JSONB` payload column. Supports mark-all-as-read and cached retrieval via Redis.
+- **Caching** — Redis caching with individual TTLs for users, posts, comments, feeds, and notifications. Every write operation invalidates the relevant cache keys so stale data never serves.
+- **Rate limiting** — global rate limit (1000 req/hour) plus a stricter auth rate limit (20 req/5 min) on register and login routes. Both via `express-rate-limit`.
+- **Security headers** — **Helmet** sets sensible HTTP security headers out of the box.
+- **Error handling** — custom `HttpError` class, centralised error middleware that handles `HttpError`, malformed JSON, Mongoose `CastError`, and unknown errors differently. Stack traces never leak in production.
+- **Structured logging** — **Pino** for application logging with `pino-pretty` for readable dev output. **pino-http** for HTTP request/response logging with custom log levels based on status codes and human-readable success/error messages.
+- **Database migrations** — two explicit migration systems. Supabase: raw SQL files managed by the Supabase CLI, including RLS policies, triggers, and functions. MongoDB: JS files managed by **migrate-mongo**. No implicit schema sync anywhere.
+- **Seed data** — a comprehensive seed script (`npm run seed`) that creates 30 users via `supabase.auth.admin.createUser`, upserts their profiles, seeds follows/likes/notifications in Supabase and posts/comments in MongoDB, and cleans up previous seed data first. Fully idempotent — run it as many times as you want.
+- **Environment validation** — all env vars are validated at startup with **Zod v4**. A missing `SUPABASE_URL` or malformed `MONGO_ATLAS_URI` fails fast with a clear message before the server attempts to connect to anything.
 
 ---
 
@@ -122,25 +140,25 @@ PostgreSQL  MongoDB / Redis
 
 ```
 social-api/
+├── supabase/
+│   └── migrations/          # Supabase SQL migrations — schema, RLS, triggers
 ├── migrations/
-│   ├── postgres/             # Knex migrations (TypeScript) — PostgreSQL schema
-│   └── mongo/                # migrate-mongo migrations (JS) — MongoDB collections & indexes
-├── seeds/                   # Knex seed files — development seed data
-├── knexfile.ts              # Knex configuration (dev/prod connections)
-├── migrate-mongo-config.js  # migrate-mongo configuration (connection, migrations dir)
+│   └── mongo/               # migrate-mongo migrations (JS) — MongoDB collections & indexes
+├── seeds/                   # Seed script (Supabase Auth users + Mongo posts + Redis cleanup)
+├── migrate-mongo-config.js  # migrate-mongo configuration
 ├── src/
-│   ├── config/              # Cookie options, environment variable validation
-│   ├── connections/         # DB connection factories (postgres, mongo, redis)
+│   ├── config/              # Cookie options, env validation (Zod v4), logger (Pino)
+│   ├── connections/         # Connection factories (supabase, mongo, redis)
 │   ├── controllers/         # Route handlers — parse req, call service, send res
 │   ├── errors/              # Custom HttpError class
-│   ├── middleware/          # Auth, authz, error, limiter, logger, notFound
-│   ├── models/              # Mongoose models (Post, Comment)
-│   ├── repositories/        # Data-access layer — all raw DB queries live here
-│   ├── routes/              # Express routers
+│   ├── middleware/          # Auth (Supabase), authz, error, limiter, logger (pino-http), notFound, validate (Zod)
+│   ├── models/              # Mongoose schemas (Post, Comment)
+│   ├── repositories/        # Data-access layer — Supabase queries, Mongo queries, Redis caching
+│   ├── routes/              # Express 5 routers
 │   ├── server/              # App factory, bootstrap, server entry point
 │   ├── services/            # Business logic
 │   ├── types/               # Shared TypeScript types and Express augmentation
-│   └── utils/               # JWT helpers, Redis helpers
+│   └── utils/               # Redis key builders
 ├── tests/
 │   ├── controllers.test.ts
 │   ├── services.test.ts
@@ -158,10 +176,10 @@ social-api/
 
 ### Prerequisites
 
-- Node.js ≥ 18
-- PostgreSQL running locally (or via Docker)
-- MongoDB running locally (or via Atlas)
-- Redis running locally (WSL on Windows is fine)
+- Node.js >= 18
+- A **Supabase** project (free tier works — you'll need the project URL, anon key, and service role key)
+- A **MongoDB Atlas** cluster (free tier is fine)
+- A **Redis Cloud** instance (or Redis running locally)
 
 ### Install
 
@@ -175,8 +193,30 @@ npm install
 
 ```bash
 cp .env.example .env
-# Fill in the values — see Environment Variables below
+# Fill in your Supabase URL + keys, MongoDB Atlas URI, and Redis Cloud URL
 ```
+
+### Push schema to Supabase
+
+```bash
+npx supabase db push
+```
+
+This applies all SQL migrations to your Supabase project — tables, RLS policies, the `on_auth_user_created` trigger, everything.
+
+### Run MongoDB migrations
+
+```bash
+npm run migrate:mongodb:up
+```
+
+### Seed
+
+```bash
+npm run seed
+```
+
+Creates 30 test users, follows between them, posts with comments, likes, and notifications. All seed accounts use password: `password`.
 
 ### Build & Run
 
@@ -189,9 +229,13 @@ npm run build
 npm start
 ```
 
+On startup, the app connects to all three data stores in sequence (MongoDB Atlas -> Redis Cloud -> Supabase), logs each connection through Pino, and only starts listening once every store is reachable. If anything fails, it shuts down everything cleanly and tells you exactly what went wrong.
+
 ---
 
 ## Environment Variables
+
+All variables are validated at startup with **Zod v4** — if anything is missing or malformed, you get a clear error message before the server attempts to connect to anything.
 
 Copy `.env.example` and fill in each value:
 
@@ -199,44 +243,32 @@ Copy `.env.example` and fill in each value:
 |---|---|
 | `NODE_ENV` | `development` or `production` |
 | `SERVER_PORT` | Server port (default `3000`) |
-| `DB_HOST` | PostgreSQL host |
-| `DB_PORT` | PostgreSQL port |
-| `DB_USER` | PostgreSQL user |
-| `DB_PASSWORD` | PostgreSQL password |
-| `DB_DATABASE` | PostgreSQL database name |
-| `MONGO_URI` | MongoDB connection URI |
-| `REDIS_URL` | Redis connection URL |
-| `ACCESS_KEY_SECRET` | JWT secret for access tokens |
-| `REFRESH_KEY_SECRET` | JWT secret for refresh tokens |
-| `ACCESS_KEY_EXPIRY` | Access token lifetime (e.g. `15m`) |
-| `REFRESH_KEY_EXPIRY` | Refresh token lifetime (e.g. `7d`) |
-| `REFRESH_TOKEN_TTL_SECONDS` | Refresh token TTL in Redis, in seconds |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous key (used for user-facing auth operations) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (used for admin operations) |
+| `MONGO_ATLAS_URI` | MongoDB Atlas connection URI |
+| `REDIS_CLOUD_URL` | Redis Cloud connection URL |
+
+Notice what's *not* here: no JWT secrets, no token expiry config. Supabase Auth handles all of that — the API just receives tokens and passes them back as cookies.
 
 ---
 
-## Running Migrations & Seeds
+## Running Migrations
 
-PostgreSQL migrations and seeds are managed by the Knex CLI, configured in `knexfile.ts`. MongoDB migrations are managed separately by `migrate-mongo`, configured in `migrate-mongo-config.js`. Both live under `migrations/`, split into `postgres/` and `mongo/`.
-
-### PostgreSQL (Knex)
+### Supabase (PostgreSQL schema + RLS)
 
 ```bash
-# Run all pending migrations
-npm run migrate
-# or: npx knex migrate:latest
-
-# Roll back the most recent migration batch
-npm run migrate:rollback
-
-# Check migration status
-npm run migrate:status
+# Apply all pending migrations to your Supabase project
+npx supabase db push
 
 # Create a new migration file
-npm run knex -- migrate:make migration_name
+npm run supabase:migration:new <migration_name>
 
-# Seed the database with sample users and posts
-npm run seed
+# Reset the local Supabase database (local dev only)
+npm run supabase:reset
 ```
+
+Migrations are plain SQL files in `supabase/migrations/`. They define tables, indexes, constraints, Row Level Security policies, triggers, and functions. The `on_auth_user_created` trigger, for example, automatically inserts a row into `public.users` whenever Supabase Auth creates a new user — so registration only needs one call.
 
 ### MongoDB (migrate-mongo)
 
@@ -254,14 +286,7 @@ npm run migrate:mongodb:status
 npm run migrate:mongodb:create -- migration_name
 ```
 
-Mongoose connects with `autoIndex: false` and `autoCreate: false`, so collections and indexes only exist once these migrations have been run — there's no implicit schema sync on app startup.
-
-The seed script creates two test accounts:
-
-| Username | Email | Password |
-|---|---|---|
-| `ahmedmohamed` | ahmedmohamed@gmail.com | `password` |
-| (register your own via POST /api/auth/register) | — | — |
+Mongoose connects with `autoIndex: false` and `autoCreate: false`, so collections and indexes only exist once these migrations have been run.
 
 ---
 
@@ -273,53 +298,53 @@ All routes are prefixed with `/api`.
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| `POST` | `/auth/register` | — | Create a new account |
-| `POST` | `/auth/login` | — | Login and receive cookies |
-| `POST` | `/auth/refresh` | Cookie | Silent access-token refresh |
-| `POST` | `/auth/logout` | Cookie | Clear auth cookies |
+| `POST` | `/auth/register` | — | Create a new account (rate-limited: 20 req/5 min) |
+| `POST` | `/auth/login` | — | Login and receive HTTP-only cookies (rate-limited: 20 req/5 min) |
+| `POST` | `/auth/refresh` | Cookie | Silent access-token refresh via Supabase |
+| `POST` | `/auth/logout` | Cookie | Revoke session server-side and clear cookies |
 
 ### Users
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
 | `GET` | `/users/:id` | — | Get public profile |
-| `PUT` | `/users/:id` | ✓ Own account | Update bio |
-| `DELETE` | `/users/:id` | ✓ Own account | Delete account |
-| `POST` | `/users/:id/follow` | ✓ | Follow a user |
-| `DELETE` | `/users/:id/follow` | ✓ | Unfollow a user |
-| `GET` | `/users/:id/followers` | ✓ | List followers |
+| `PUT` | `/users/:id` | Own account | Update bio |
+| `DELETE` | `/users/:id` | Own account | Delete account (cascades across all stores) |
+| `POST` | `/users/:id/follow` | Authenticated | Follow a user |
+| `DELETE` | `/users/:id/follow` | Authenticated | Unfollow a user |
+| `GET` | `/users/:id/followers` | Authenticated | List followers |
 
 ### Feed
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| `GET` | `/feed/` | ✓ | Get personalised feed (Redis-cached) |
+| `GET` | `/feed/` | Authenticated | Get personalised feed (Redis-cached) |
 
 ### Posts
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| `POST` | `/posts/` | ✓ | Create a post |
-| `GET` | `/posts/:id` | ✓ | Get post with comments and likes |
-| `PUT` | `/posts/:id` | ✓ Own post | Edit post content |
-| `DELETE` | `/posts/:id` | ✓ Own post | Delete post |
-| `POST` | `/posts/:id/like` | ✓ | Like a post |
-| `DELETE` | `/posts/:id/like` | ✓ | Unlike a post |
+| `POST` | `/posts/` | Authenticated | Create a post |
+| `GET` | `/posts/:id` | Authenticated | Get post with comments and likes |
+| `PUT` | `/posts/:id` | Own post | Edit post content |
+| `DELETE` | `/posts/:id` | Own post | Delete post (cascades comments + likes) |
+| `POST` | `/posts/:id/like` | Authenticated | Like a post |
+| `DELETE` | `/posts/:id/like` | Authenticated | Unlike a post |
 
 ### Comments
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| `POST` | `/comments/:postId` | ✓ | Add a comment |
-| `GET` | `/comments/:postId` | ✓ | Get all comments on a post |
-| `DELETE` | `/comments/:postId/:commentId` | ✓ Own comment | Delete a comment |
+| `POST` | `/comments/:postId` | Authenticated | Add a comment |
+| `GET` | `/comments/:postId` | Authenticated | Get all comments on a post |
+| `DELETE` | `/comments/:postId/:commentId` | Own comment | Delete a comment |
 
 ### Notifications
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| `GET` | `/notifications/` | ✓ | Fetch all notifications |
-| `PATCH` | `/notifications/read` | ✓ | Mark all as read |
+| `GET` | `/notifications/` | Authenticated | Fetch all notifications |
+| `PATCH` | `/notifications/read` | Authenticated | Mark all as read |
 
 ---
 
@@ -336,7 +361,7 @@ npm run test:coverage
 npm run check
 ```
 
-Tests cover controllers, services, and utilities / middleware using Jest and `ts-jest`. The HTML coverage report is generated at `coverage/lcov-report/index.html`.
+Tests cover controllers, services, and utilities / middleware using Jest with **@swc/jest** for faster compilation. The HTML coverage report is generated at `coverage/lcov-report/index.html`.
 
 ---
 
@@ -350,13 +375,13 @@ social-api_postman_collection.json
 
 **Quick setup:**
 
-1. Import the file into Postman (File → Import).
+1. Import the file into Postman (File -> Import).
 2. Create an environment with a variable `baseUrl` set to `http://localhost:3000/api`.
-3. Run **login - ahmed** first — the HTTP-only cookies are saved automatically by Postman Desktop.
+3. Run **login - ahmed** first (email: `ahmedmohamed@gmail.com`, password: `password`) — the HTTP-only cookies are saved automatically by Postman Desktop.
 4. After creating a post, copy its `_id` into a `postId` variable.
 
-For a full interactive walkthrough of every endpoint (with a visual checklist), open **`TESTING.html`** in your browser.
+For a full interactive walkthrough of every endpoint (with a visual checklist), open **[TESTING.html](https://moamen-tamer.github.io/social-api/TESTING.html)** in your browser.
 
 ---
 
-> Built as a backend engineering project to explore polyglot persistence, clean layered architecture, and production-grade auth patterns in TypeScript.
+> Built as a backend engineering project to explore polyglot persistence, Supabase as a Postgres + Auth provider, and production-grade patterns in TypeScript. If you're working on something similar or have feedback, I'd love to hear from you.

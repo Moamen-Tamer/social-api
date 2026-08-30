@@ -9,7 +9,7 @@ export const redis: Redis = new Redis(env.redisCloudUrl, {
 });
 
 redis.on("connect", () => {
-    logger.info("Redis connected");
+    logger.info("Redis (Cloud) connected");
 });
 
 redis.on("error", (error: Error) => {

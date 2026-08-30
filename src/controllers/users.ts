@@ -27,11 +27,13 @@ export const updateBio = async (
             throw new HttpError(403, "You can only update your own bio.");
         }
 
-        if (typeof req.body.update !== "string" || req.body.update.trim().length > 500) {
+        const update = typeof req.body?.update === "string" ? req.body.update.trim() : "";
+
+        if (typeof req.body?.update !== "string" || update.length > 500) {
             throw new HttpError(400, "Bio must be a string up to 500 characters.");
         }
 
-        const user: User = await updateUserBioById(req.params.id, req.body.update.trim());
+        const user: User = await updateUserBioById(req.params.id, update);
 
         res.status(200).json({
             id: user.id,

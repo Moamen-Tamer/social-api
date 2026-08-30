@@ -1,41 +1,38 @@
 import "dotenv/config";
+import { z } from "zod";
 
-const requireEnv = (key: string): string => {
-    const value: string | undefined = process.env[key];
+const envSchema = z.object({
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    SERVER_PORT: z.coerce.number().int().positive().default(3000),
 
-    if (!value) throw new Error(`Missing required environment variable: ${key}`);
+    SUPABASE_URL: z.url("SUPABASE_URL must be a valid URL"),
+    SUPABASE_ANON_KEY: z.string().min(1, "SUPABASE_ANON_KEY is required"),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
 
-    return value;
-};
+    MONGO_ATLAS_URI: z.url("MONGO_ATLAS_URI must be a valid MongoDB connection string"),
 
-const requireNumberEnv = (key: string): number => {
-    const rawValue = requireEnv(key);
-    const value: number = Number(rawValue);
-    
-    if (!Number.isFinite(value) || value <= 0) throw new Error(`${key} must be a positive number`);
+    REDIS_Cloud_URL: z.url("REDIS_URL must be a valid Redis connection string")
+});
 
-    return value;
-};
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`).join("\n");
+
+    throw new Error(`Invalid environment variables:\n${issues}`);
+}
+
+const raw = parsed.data;
 
 export const env = {
-    nodeEnv: requireEnv("NODE_ENV"),
-    serverPort: requireNumberEnv("SERVER_PORT"),
+    nodeEnv: raw.NODE_ENV,
+    serverPort: raw.SERVER_PORT,
 
-    dbHost: requireEnv("DB_HOST"),
-    dbPort: requireNumberEnv("DB_PORT"),
-    dbUser: requireEnv("DB_USER"),
-    dbPassword: requireEnv("DB_PASSWORD"),
-    dbDatabase: requireEnv("DB_DATABASE"),
+    supabaseUrl: raw.SUPABASE_URL,
+    supabaseAnonKey: raw.SUPABASE_ANON_KEY,
+    supabaseServiceRoleKey: raw.SUPABASE_SERVICE_ROLE_KEY,
 
-    mongoUri: requireEnv("MONGO_URI"),
+    mongoAtlasUri: raw.MONGO_ATLAS_URI,
 
-    redisUrl: requireEnv("REDIS_URL"),
-
-    accessKeySecret: requireEnv("ACCESS_KEY_SECRET"),
-    refreshKeySecret: requireEnv("REFRESH_KEY_SECRET"),
-
-    accessKeyExpiry: requireEnv("ACCESS_KEY_EXPIRY"),
-    refreshKeyExpiry: requireEnv("REFRESH_KEY_EXPIRY"),
-
-    refreshTokenTtlSeconds: requireNumberEnv("REFRESH_TOKEN_TTL_SECONDS")
+    redisCloudUrl: raw.REDIS_Cloud_URL,
 };

@@ -1,9 +1,7 @@
 import { HttpError } from "../errors/HttpError.js";
-import { createUser, existsByEmail, existsByUsername, getUser } from "../repositories/auth.js";
-import bcrypt from 'bcrypt';
-import type { LoginResult, Payload, User } from "../types/blueprints.js";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
-import { deleteRefreshToken, isRefreshTokenValid, storeRefreshToken } from "./refreshToken.js";
+import { deleteAuthUser, existsByEmail, existsByUsername, refreshSupabaseSession, revokeSession, signInWithPassword, signUp } from "../repositories/auth.js";
+import type { LoginResult, refreshResult } from "../types/blueprints.js";
+import { fetchUserById } from "../repositories/users.js";
 
 export const register = async (username: string, email: string, password: string): Promise<void> => {
     const emailExists: boolean = await existsByEmail(email);
@@ -14,55 +12,56 @@ export const register = async (username: string, email: string, password: string
 
     if (usernameExists) throw new HttpError(409, "Username is already taken.");
 
-    const password_hash: string = await bcrypt.hash(password, 12);
+    const { user, error } = await signUp(username, email, password);
 
-    await createUser(username, email, password_hash);
+    if (error) throw new HttpError(409, error.message);
+
+    if (user?.identities && user.identities.length === 0) throw new HttpError(409, "Email is already registered.");
 };
 
 export const login = async (email: string, password: string): Promise<LoginResult> => {
-    const user: User | null = await getUser(email);
+    const { user, session, error } = await signInWithPassword(email, password);
 
-    if (!user) throw new HttpError(401, "Invalid email or password.");
+    if (error || !user || !session) throw new HttpError(401, "Invalid email or password.");
 
-    const passwordMatches: boolean = await bcrypt.compare(password, user.password_hash);
+    const profile = await fetchUserById(user.id);
 
-    if (!passwordMatches) throw new HttpError(401, "Invalid email or password.");
+    if (!profile) throw new HttpError(401, "Invalid email or password.");
 
-    const accessToken: string = generateAccessToken({ 
-        id: user.id,
-        username: user.username,
-        email: user.email
-    });
-
-    const refreshToken: string = generateRefreshToken({ 
-        id: user.id,
-        username: user.username,
-        email: user.email
-    });
-
-    await storeRefreshToken(user.id, refreshToken);
-
-    return { 
-        user, 
-        accessToken, 
-        refreshToken 
+    return {
+        user: {
+            id: user.id,
+            username: profile.username,
+            email: user.email ?? email,
+            bio: profile.bio,
+            created_at: profile.created_at
+        },
+        accessToken: session.access_token,
+        refreshToken: session.refresh_token,
+        expiresIn: session.expires_in
     };
 };
 
-export const logout = async (userId: string, refreshToken: string): Promise<void> => {
-    if (!refreshToken) return;
+export const logout = async (accessToken: string): Promise<void> => {
+    if (!accessToken) return;
 
-    await deleteRefreshToken(userId, refreshToken);
+    await revokeSession(accessToken);
 };
 
-export const validateToken = async (refreshToken: string): Promise<Payload> => {
+export const refreshSession = async (refreshToken: string): Promise<refreshResult> => {
     if (!refreshToken) throw new HttpError(401, "Refresh token required.");
 
-    const payload: Payload = verifyRefreshToken(refreshToken);
+    const { session, error } = await refreshSupabaseSession(refreshToken);
 
-    const isValid: boolean = await isRefreshTokenValid(payload.id, refreshToken);
+    if (error || !session) throw new HttpError(401, "Invalid or expired refresh token.");
 
-    if (!isValid) throw new HttpError(401, "Invalid refresh token.");
+    return {
+        accessToken: session?.access_token,
+        refreshToken: session?.refresh_token,
+        expiresIn: session?.expires_in
+    };
+};
 
-    return payload;
+export const deleteAccount = async (userId: string): Promise<void> => {
+    await deleteAuthUser(userId);
 };

@@ -3,10 +3,13 @@ import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import type mongoose from "mongoose";
 import { makeUserKey } from "../utils/redis.js";
-import { db } from "../connections/knex.js";
-import type { Knex } from "knex";
+import { supabase } from "../connections/supabase.js";
+import type { FollowerRow, User } from "../types/blueprints.js";
+import { HttpError } from "../errors/HttpError.js";
 
-export const fetchUserRedis = async (userId: string) => {
+export const fetchUserRedis = async (
+    userId: string
+) => {
     const key = makeUserKey(userId);
 
     const user = await redis.get(key);
@@ -16,50 +19,41 @@ export const fetchUserRedis = async (userId: string) => {
     return JSON.parse(user);
 };
 
-export const fetchUserById = async (userId: string) => {
-    return db("users")
-        .select(
-            "id",
-            "username",
-            "bio",
-            "created_at"
-        )
-        .where("id", userId)
-        .first();
+export const fetchUserById = async (
+    userId: string
+) => {
+    const { data, error } = await supabase
+        .from("users")
+        .select("id, username, bio, created_at")
+        .eq("id", userId)
+        .maybeSingle();
+
+    if (error) throw new HttpError(500, "Failed to fetch user");
+
+    return data ?? undefined;
 };
 
 export const updateUserBio = async (
-    userId: string, 
+    userId: string,
     update: string
-) => {
-    return db("users")
-        .where("id", userId)
+): Promise<User[]> => {
+    const { data, error } = await supabase
+        .from("users")
         .update(
             {
                 bio: update
-            },
-            [
-                "id",
-                "username",
-                "email",
-                "bio",
-                "created_at"
-            ]
-        );
+            }
+        )
+        .eq("id", userId)
+        .select("id, username, email, bio, created_at");
 
-};
+    if (error) throw new HttpError(500, "Failed to update user bio");
 
-export const deleteUserAccount = async (
-    userId: string, 
-    client: Knex | Knex.Transaction = db
-): Promise<void> => {
-    await client("users")
-        .where("id", userId)
-        .del();
+    return (data ?? []) as User[];
 };
 
 export const deleteUserRelated = async (
-    userId: string, 
+    userId: string,
     session?: mongoose.mongo.ClientSession
 ): Promise<void> => {
     await Promise.all([
@@ -75,57 +69,55 @@ export const deleteUserRelated = async (
 };
 
 export const addFollowing = async (
-    followerId: string, 
+    followerId: string,
     followingId: string
 ) => {
-    return await db("follows")
-        .insert({
-            follower_id: followerId,
-            following_id: followingId
-        })
-        .onConflict([
-            "follower_id",
-            "following_id"
-        ])
-        .ignore()
-        .returning([
-            "follower_id",
-            "following_id",
-            "created_at"
-        ]);
+    const { data, error } = await supabase
+        .from("follows")
+        .upsert(
+            {
+                follower_id: followerId,
+                following_id: followingId
+            },
+            {
+                onConflict: "follower_id, following_id", ignoreDuplicates: true
+            }
+        )
+        .select("follower_id, following_id, created_at");
+
+    if (error) throw new HttpError(500, "Failed to follow user");
+
+    return data ?? [];
 };
 
 export const deleteFollowing = async (
-    followerId: string, 
+    followerId: string,
     followingId: string
 ) => {
-    return db("follows")
-        .where({
-            follower_id: followerId,
-            following_id: followingId
-        })
-        .del()
-        .returning(["*"]);
+    const { data, error } = await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", followerId)
+        .eq("following_id", followingId)
+        .select("*");
+
+    if (error) throw new HttpError(500, "Failed to unfollow user");
+
+    return data ?? [];
 };
 
-export const getFollowers = async (userId: string) => {
-    return db("follows as f")
-        .join(
-            "users as u",
-            "f.follower_id",
-            "u.id"
-        )
-        .select(
-            "u.id",
-            "u.username",
-            "u.bio"
-        )
-        .where(
-            "f.following_id", 
-            userId
-        )
-        .orderBy(
-            "f.created_at", 
-            "desc"
-        );
+export const getFollowers = async (
+    userId: string
+) => {
+    const { data, error } = await supabase
+        .from("follows")
+        .select("follower:users!follower_id(id, username, bio)")
+        .eq("following_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error) throw new HttpError(500, "Failed to fetch followers");
+
+    return ((data ?? []) as unknown as FollowerRow[])
+        .map((row: any) => row.follower)
+        .filter((follower): follower is { id: string; username: string; bio: string | null } => follower !== null);
 };

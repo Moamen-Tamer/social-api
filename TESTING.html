@@ -5,33 +5,553 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b13">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <title>Social API Test Manual</title>
+  <title>Social API Test Console</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
     :root { --ink:#f2eee5; --muted:#a4a9b5; --canvas:#080b13; --panel:#101521; --panel-2:#151b29; --line:#283147; --blue:#60a5fa; --aqua:#63e6be; --amber:#f5c451; --red:#ff7979; --mono:'DM Mono',monospace; --display:Fraunces,Georgia,serif; }
     * { box-sizing:border-box; } html { scroll-behavior:smooth; } body { margin:0; color:var(--ink); background:var(--canvas); font:15px/1.65 var(--mono); }
     body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.26; background-image:linear-gradient(rgba(96,165,250,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.045) 1px,transparent 1px); background-size:32px 32px; mask-image:linear-gradient(to bottom,black,transparent 80%); }
     a { color:var(--blue); } button { font:inherit; } .shell { width:min(1420px,calc(100% - 40px)); margin:auto; position:relative; }
-    .masthead { padding:28px 0 62px; border-bottom:1px solid var(--line); } .topline { display:flex; justify-content:space-between; align-items:center; gap:16px; color:var(--muted); font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
-    .brand { color:var(--ink); font-weight:500; } .live { color:var(--aqua); display:flex; gap:9px; align-items:center; } .live::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--aqua); box-shadow:0 0 16px var(--aqua); }
-    h1 { max-width:850px; font:700 clamp(42px,7vw,96px)/.96 var(--display); letter-spacing:-.065em; margin:64px 0 24px; } .accent { color:var(--blue); font-style:italic; }
+
+    /* Page tabs */
+    .page-tabs { display:flex; gap:0; border-bottom:1px solid var(--line); }
+    .page-tab { padding:14px 28px; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; font-size:13px; letter-spacing:.04em; text-transform:uppercase; transition:color .18s, border-color .18s; user-select:none; background:none; border-top:none; border-left:none; border-right:none; }
+    .page-tab:hover { color:var(--ink); }
+    .page-tab.active { color:var(--aqua); border-bottom-color:var(--aqua); }
+    .page { display:none; } .page.active { display:block; }
+
+    /* Static live testing */
+    .static-live { padding:40px 0 90px; }
+    .cat-heading { font:600 25px/1.2 var(--display); letter-spacing:-.03em; margin:48px 0 16px; color:var(--ink); }
+    .cat-heading:first-child { margin-top:0; }
+    .ep-block { border:1px solid var(--line); background:var(--panel); margin-bottom:16px; }
+    .ep-block-head { display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--panel-2); }
+    .ep-block-method { font-size:11px; font-weight:500; padding:3px 8px; border:1px solid currentColor; flex-shrink:0; }
+    .m-post { color:var(--aqua); } .m-get { color:var(--blue); } .m-put { color:var(--amber); } .m-patch { color:#c084fc; } .m-delete { color:var(--red); }
+    .ep-block-name { color:var(--ink); font-size:14px; font-weight:500; }
+    .ep-block-url { color:var(--muted); font-size:12px; margin-left:auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:520px; }
+    .ep-block-body { padding:0; }
+    .ep-block-body.has-body { border-bottom:1px solid var(--line); }
+    .ep-section-label { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); padding:10px 18px 0; }
+    .ep-code { background:#05070d; padding:14px 18px; white-space:pre-wrap; word-break:break-word; font:13px/1.6 var(--mono); color:#d7def0; overflow-x:auto; }
+    .ep-code .key { color:var(--blue); }
+    .ep-code .string { color:var(--aqua); }
+    .ep-code .number { color:var(--amber); }
+    .ep-code .bool { color:var(--red); }
+    .ep-code .null { color:var(--muted); }
+    .ep-no-body { padding:10px 18px; color:var(--muted); font-size:12px; font-style:italic; border-bottom:1px solid var(--line); }
+    .ep-status { display:inline-block; font-size:11px; font-weight:500; padding:2px 8px; border:1px solid; margin-left:4px; }
+    .s-ok { color:var(--aqua); border-color:var(--aqua); }
+    .resp-meta-inline { display:flex; align-items:center; gap:10px; padding:8px 18px 0; }
+
+    /* Original page styles */
+    .masthead { padding:28px 0 22px; border-bottom:1px solid var(--line); } .topline { display:flex; justify-content:space-between; align-items:center; gap:16px; color:var(--muted); font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+    .brand { color:var(--ink); font-weight:500; } .live-dot { color:var(--aqua); display:flex; gap:9px; align-items:center; } .live-dot::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--aqua); box-shadow:0 0 16px var(--aqua); }
+    h1 { max-width:850px; font:700 clamp(42px,7vw,96px)/.96 var(--display); letter-spacing:-.065em; margin:40px 0 24px; } .accent { color:var(--blue); font-style:italic; }
     .lede { max-width:690px; color:var(--muted); font-size:17px; } .quick { display:flex; flex-wrap:wrap; gap:10px; margin-top:32px; } .chip { border:1px solid var(--line); color:var(--muted); padding:8px 11px; font-size:12px; }
     .layout { display:grid; grid-template-columns:232px minmax(0,1fr); gap:52px; padding:42px 0 90px; } .nav { position:sticky; top:20px; height:max-content; } .nav p { color:var(--muted); text-transform:uppercase; letter-spacing:.1em; font-size:11px; margin:0 0 12px; } .nav a { display:block; padding:8px 10px; color:var(--muted); text-decoration:none; border-left:1px solid var(--line); } .nav a:hover { color:var(--ink); border-color:var(--blue); }
     section { scroll-margin-top:24px; margin-bottom:68px; } .eyebrow { color:var(--aqua); font-size:11px; text-transform:uppercase; letter-spacing:.12em; } h2 { font:600 clamp(30px,4vw,49px)/1.05 var(--display); letter-spacing:-.045em; margin:10px 0 16px; } h3 { font:600 25px/1.2 var(--display); letter-spacing:-.03em; margin:36px 0 13px; }
     .intro { color:var(--muted); max-width:760px; } .callout { border:1px solid #31425b; background:linear-gradient(115deg,rgba(96,165,250,.12),rgba(16,21,33,.4)); padding:20px 22px; margin:22px 0; } .callout strong { color:var(--blue); }
     .command { position:relative; background:#05070d; border:1px solid var(--line); padding:18px 56px 18px 20px; overflow:auto; white-space:pre; color:#d7def0; } .command::before { content:"$"; color:var(--aqua); margin-right:13px; } .copy { position:absolute; top:9px; right:9px; color:var(--ink); background:var(--panel-2); border:1px solid var(--line); padding:8px 10px; cursor:pointer; } .copy:hover,.copy:focus { border-color:var(--blue); outline:none; }
     .steps { counter-reset:step; padding:0; list-style:none; display:grid; gap:12px; } .steps li { counter-increment:step; position:relative; padding:16px 20px 16px 56px; background:var(--panel); border:1px solid var(--line); } .steps li::before { content:counter(step,decimal-leading-zero); position:absolute; left:18px; color:var(--aqua); font-size:12px; }
-    .endpoint-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; } .endpoint { background:var(--panel); border:1px solid var(--line); padding:17px; transition:border-color .18s,transform .18s; } .endpoint:hover { border-color:#52698b; transform:translateY(-2px); } .endpoint-top { display:flex; justify-content:space-between; gap:12px; align-items:center; } .method { font-size:11px; font-weight:500; padding:3px 7px; border:1px solid currentColor; } .post { color:var(--aqua); } .get { color:var(--blue); } .put,.patch { color:var(--amber); } .delete { color:var(--red); } .check { appearance:none; width:19px; height:19px; border:1px solid #56637c; background:transparent; cursor:pointer; } .check:checked { background:var(--aqua); border-color:var(--aqua); box-shadow:inset 0 0 0 4px var(--panel); }
+    .endpoint-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; } .endpoint { background:var(--panel); border:1px solid var(--line); padding:17px; transition:border-color .18s,transform .18s; } .endpoint:hover { border-color:#52698b; transform:translateY(-2px); } .endpoint-top { display:flex; justify-content:space-between; gap:12px; align-items:center; } .method { font-size:11px; font-weight:500; padding:3px 7px; border:1px solid currentColor; } .post { color:var(--aqua); } .get { color:var(--blue); } .put { color:var(--amber); } .patch { color:#c084fc; } .delete { color:var(--red); } .check { appearance:none; width:19px; height:19px; border:1px solid #56637c; background:transparent; cursor:pointer; } .check:checked { background:var(--aqua); border-color:var(--aqua); box-shadow:inset 0 0 0 4px var(--panel); }
     code { font:13px/1.5 var(--mono); color:#dce9ff; } .path { margin:13px 0 8px; display:block; overflow-wrap:anywhere; } .endpoint p { color:var(--muted); margin:0; font-size:12px; line-height:1.55; }
     .table-wrap { overflow:auto; border:1px solid var(--line); } table { width:100%; border-collapse:collapse; min-width:690px; } th { background:#171e2c; color:var(--muted); font-size:11px; text-align:left; text-transform:uppercase; letter-spacing:.08em; } th,td { padding:14px 16px; border-bottom:1px solid var(--line); vertical-align:top; } tr:last-child td { border-bottom:0; } td { color:var(--muted); } td:first-child { color:var(--ink); }
     .account { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); } .account div { padding:19px; background:var(--panel); } .label { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:7px; }
     .footer { padding:27px 0; border-top:1px solid var(--line); color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:16px; }
-    @media (max-width:800px) { .shell { width:min(100% - 28px,1420px); } .masthead { padding-bottom:40px; } h1 { margin-top:45px; } .layout { display:block; padding-top:28px; } .nav { position:relative; top:auto; display:flex; overflow:auto; gap:5px; margin-bottom:40px; } .nav p { display:none; } .nav a { white-space:nowrap; border:1px solid var(--line); } .endpoint-grid { grid-template-columns:1fr; } .account { grid-template-columns:1fr; } .topline { font-size:10px; } }
+    @media (max-width:800px) { .shell { width:min(100% - 28px,1420px); } .masthead { padding-bottom:40px; } h1 { margin-top:45px; } .layout { display:block; padding-top:28px; } .nav { position:relative; top:auto; display:flex; overflow:auto; gap:5px; margin-bottom:40px; } .nav p { display:none; } .nav a { white-space:nowrap; border:1px solid var(--line); } .endpoint-grid { grid-template-columns:1fr; } .account { grid-template-columns:1fr; } .topline { font-size:10px; } .ep-block-url { max-width:180px; } }
     @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .endpoint { transition:none; } }
   </style>
 </head>
 <body>
-  <header class="masthead"><div class="shell"><div class="topline"><span class="brand">Social API / Developer Field Manual</span><span class="live">Dark-mode test console</span></div><h1>Run every endpoint with <span class="accent">confidence.</span></h1><p class="lede">A practical Postman workflow for validating your social API from the first database connection to the final logout cookie.</p><div class="quick"><span class="chip">Express + TypeScript</span><span class="chip">PostgreSQL</span><span class="chip">MongoDB</span><span class="chip">Redis / WSL</span></div></div></header>
+  <header class="masthead"><div class="shell"><div class="topline"><span class="brand">Social API / Developer Console</span><span class="live-dot">Dark-mode test console</span></div><h1>Run every endpoint with <span class="accent">confidence.</span></h1><p class="lede">A practical workflow for validating your social API from the first database connection to the final logout cookie.</p><div class="quick"><span class="chip">Express + TypeScript</span><span class="chip">Supabase (PostgreSQL)</span><span class="chip">MongoDB Atlas</span><span class="chip">Redis Cloud</span></div>
+    <div class="page-tabs shell" style="margin-top:32px;border-bottom:1px solid var(--line);">
+      <button class="page-tab active" data-page="live">Live Testing</button>
+      <button class="page-tab" data-page="manual">Test Manual</button>
+    </div>
+  </div></header>
+
+  <!-- ==================== PAGE 1: LIVE TESTING (STATIC) ==================== -->
+  <div class="page active" id="page-live">
+    <main class="shell static-live">
+
+      <!-- ===== AUTHENTICATION ===== -->
+      <h2 class="cat-heading">Authentication</h2>
+
+      <!-- 1. register -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">register - moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/auth/register</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "username": "moamen tamer",
+  "email": "moamenexample123@gmail.com",
+  "password": "password123"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  "success": true
+}</div>
+      </div>
+
+      <!-- 2. login moamen -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">login - moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/auth/login</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "email": "moamenexample123@gmail.com",
+  "password": "password123"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Login successful."</span>,
+  <span class="key">"user"</span>: {
+    <span class="key">"id"</span>: <span class="string">"4eb40f75-c8b4-461d-95db-91c6f5abd7d8"</span>,
+    <span class="key">"username"</span>: <span class="string">"moamen tamer"</span>,
+    <span class="key">"email"</span>: <span class="string">"moamenexample123@gmail.com"</span>
+  }
+}</div>
+      </div>
+
+      <!-- 3. refresh -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">refresh - moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/auth/refresh</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"token has been refreshed"</span>
+}</div>
+      </div>
+
+      <!-- 4. logout -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">logout</span>
+          <span class="ep-block-url">http://localhost:3000/api/auth/logout</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Logout successful."</span>
+}</div>
+      </div>
+
+      <!-- 5. login ahmed -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">login - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/auth/login</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "email": "ahmedmohamed@gmail.com",
+  "password": "password"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Login successful."</span>,
+  <span class="key">"user"</span>: {
+    <span class="key">"id"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+    <span class="key">"username"</span>: <span class="string">"ahmed_mohamed"</span>,
+    <span class="key">"email"</span>: <span class="string">"ahmedmohamed@gmail.com"</span>
+  }
+}</div>
+      </div>
+
+      <!-- ===== USERS ===== -->
+      <h2 class="cat-heading">Users</h2>
+
+      <!-- 6. get user -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">user account - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"user"</span>: {
+    <span class="key">"id"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+    <span class="key">"username"</span>: <span class="string">"ahmed_mohamed"</span>,
+    <span class="key">"bio"</span>: <span class="string">"Building a social API"</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2026-08-26T12:34:30.776671+00:00"</span>
+  }
+}</div>
+      </div>
+
+      <!-- 7. update bio -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-put">PUT</span>
+          <span class="ep-block-name">update bio - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "update": "Building a social API"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"id"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+  <span class="key">"username"</span>: <span class="string">"ahmed_mohamed"</span>,
+  <span class="key">"email"</span>: <span class="string">"ahmedmohamed@gmail.com"</span>,
+  <span class="key">"bio"</span>: <span class="string">"Building a social API"</span>
+}</div>
+      </div>
+
+      <!-- 8. follow -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">follow - ahmed =&gt; moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8/follow</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"followed successfully"</span>
+}</div>
+      </div>
+
+      <!-- 9. unfollow -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-delete">DELETE</span>
+          <span class="ep-block-name">unfollow - ahmed x&gt; moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8/follow</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"unfollowed successfully"</span>
+}</div>
+      </div>
+
+      <!-- 10. followers -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">followers - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2/followers</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"followers"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"6befd90f-9845-4ee3-8d83-9a64eb038d75"</span>,
+      <span class="key">"bio"</span>: <span class="string">"Operations manager and early-morning swimmer."</span>,
+      <span class="key">"username"</span>: <span class="string">"adel_samir"</span>
+    },
+    {
+      <span class="key">"id"</span>: <span class="string">"1d49d267-b964-4d5d-8632-1cd903ccb54f"</span>,
+      <span class="key">"bio"</span>: <span class="string">"HR specialist and plant parent."</span>,
+      <span class="key">"username"</span>: <span class="string">"menna_hossam"</span>
+    }
+  ]
+}</div>
+      </div>
+
+      <!-- 11. delete user -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-delete">DELETE</span>
+          <span class="ep-block-name">delete - moamen</span>
+          <span class="ep-block-url">http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"User deleted successfully"</span>
+}</div>
+      </div>
+
+      <!-- ===== FEED ===== -->
+      <h2 class="cat-heading">Feed</h2>
+
+      <!-- 12. feed -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">feed - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/feed/</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">[
+  {
+    <span class="key">"_id"</span>: <span class="string">"6a8edd635a83289e3a5277cd"</span>,
+    <span class="key">"authorId"</span>: <span class="string">"c0bbd40a-cd83-4ceb-925a-c5bcbc9ed90f"</span>,
+    <span class="key">"content"</span>: <span class="string">"Today's reminder: write the test before calling a bug fixed."</span>,
+    <span class="key">"mediaUrls"</span>: [],
+    <span class="key">"tags"</span>: [<span class="string">"seeded"</span>, <span class="string">"testing"</span>],
+    <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:43.739Z"</span>,
+    <span class="key">"likes"</span>: <span class="number">3</span>,
+    <span class="key">"comments"</span>: [
+      {
+        <span class="key">"_id"</span>: <span class="string">"6a8edd6c5a83289e3a527818"</span>,
+        <span class="key">"postId"</span>: <span class="string">"6a8edd635a83289e3a5277cd"</span>,
+        <span class="key">"authorId"</span>: <span class="string">"fa488a48-c320-4c9e-838d-d89ab019c33a"</span>,
+        <span class="key">"content"</span>: <span class="string">"This is exactly the kind of update I needed to read today."</span>,
+        <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:52.606Z"</span>
+      },
+      {
+        <span class="key">"_id"</span>: <span class="string">"6a8edd6c5a83289e3a527819"</span>,
+        <span class="key">"postId"</span>: <span class="string">"6a8edd635a83289e3a5277cd"</span>,
+        <span class="key">"authorId"</span>: <span class="string">"01c0fc22-29bb-43d0-8bfd-8a47f05ecc08"</span>,
+        <span class="key">"content"</span>: <span class="string">"Love this. Keep sharing your progress!"</span>,
+        <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:52.606Z"</span>
+      }
+    ]
+  },
+  {
+    <span class="key">"_id"</span>: <span class="string">"6a8edd635a83289e3a5277cc"</span>,
+    <span class="key">"authorId"</span>: <span class="string">"c0bbd40a-cd83-4ceb-925a-c5bcbc9ed90f"</span>,
+    <span class="key">"content"</span>: <span class="string">"A walk after work fixes more problems than I expect every time."</span>,
+    <span class="key">"mediaUrls"</span>: [<span class="string">"https://images.example.com/seed/8.jpg"</span>],
+    <span class="key">"tags"</span>: [<span class="string">"seeded"</span>, <span class="string">"daily-life"</span>],
+    <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:43.676Z"</span>,
+    <span class="key">"likes"</span>: <span class="number">3</span>,
+    <span class="key">"comments"</span>: [
+      {
+        <span class="key">"_id"</span>: <span class="string">"6a8edd6c5a83289e3a527816"</span>,
+        <span class="key">"postId"</span>: <span class="string">"6a8edd635a83289e3a5277cc"</span>,
+        <span class="key">"authorId"</span>: <span class="string">"75ab7acb-6e8d-4073-934a-15f743bb87a0"</span>,
+        <span class="key">"content"</span>: <span class="string">"This is exactly the kind of update I needed to read today."</span>,
+        <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:52.239Z"</span>
+      },
+      {
+        <span class="key">"_id"</span>: <span class="string">"6a8edd6c5a83289e3a527817"</span>,
+        <span class="key">"postId"</span>: <span class="string">"6a8edd635a83289e3a5277cc"</span>,
+        <span class="key">"authorId"</span>: <span class="string">"d6099ea7-8051-4b89-a297-6f5a5dc37621"</span>,
+        <span class="key">"content"</span>: <span class="string">"Love this. Keep sharing your progress!"</span>,
+        <span class="key">"createdAt"</span>: <span class="string">"2026-08-26T12:34:52.239Z"</span>
+      }
+    ]
+  }
+]</div>
+      </div>
+
+      <!-- ===== POSTS ===== -->
+      <h2 class="cat-heading">Posts</h2>
+
+      <!-- 13. create post -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">create post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "content": "My Postman test post"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">201 Created</span></div>
+        <div class="ep-code">{
+  <span class="key">"authorId"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+  <span class="key">"content"</span>: <span class="string">"My Postman test post"</span>,
+  <span class="key">"mediaUrls"</span>: [],
+  <span class="key">"tags"</span>: [],
+  <span class="key">"_id"</span>: <span class="string">"6a9422b69ac3901e01829814"</span>,
+  <span class="key">"createdAt"</span>: <span class="string">"2026-08-30T12:31:50.642Z"</span>,
+  <span class="key">"__v"</span>: <span class="number">0</span>
+}</div>
+      </div>
+
+      <!-- 14. get post -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">get post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/6a9422b69ac3901e01829814</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"id"</span>: <span class="string">"6a9422b69ac3901e01829814"</span>,
+  <span class="key">"author"</span>: {
+    <span class="key">"id"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+    <span class="key">"username"</span>: <span class="string">"ahmed_mohamed"</span>
+  },
+  <span class="key">"content"</span>: <span class="string">"My Postman test post"</span>,
+  <span class="key">"mediaUrls"</span>: [],
+  <span class="key">"tags"</span>: [],
+  <span class="key">"likesCount"</span>: <span class="number">0</span>,
+  <span class="key">"comments"</span>: []
+}</div>
+      </div>
+
+      <!-- 15. update post -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-put">PUT</span>
+          <span class="ep-block-name">update post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/6a9422b69ac3901e01829814</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "content": "My edited Postman test post"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"_id"</span>: <span class="string">"6a9422b69ac3901e01829814"</span>,
+  <span class="key">"authorId"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+  <span class="key">"content"</span>: <span class="string">"My edited Postman test post"</span>,
+  <span class="key">"mediaUrls"</span>: [],
+  <span class="key">"tags"</span>: [],
+  <span class="key">"createdAt"</span>: <span class="string">"2026-08-30T12:31:50.642Z"</span>,
+  <span class="key">"__v"</span>: <span class="number">0</span>
+}</div>
+      </div>
+
+      <!-- 16. like -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">like post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/6a9422b69ac3901e01829814/like</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Post liked successfully"</span>,
+  <span class="key">"likes"</span>: <span class="number">1</span>
+}</div>
+      </div>
+
+      <!-- 17. unlike -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-delete">DELETE</span>
+          <span class="ep-block-name">unlike post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/6a9422b69ac3901e01829814/like</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Post unliked successfully"</span>,
+  <span class="key">"likes"</span>: <span class="number">0</span>
+}</div>
+      </div>
+
+      <!-- 18. delete post -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-delete">DELETE</span>
+          <span class="ep-block-name">delete post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/posts/6a9422b69ac3901e01829814</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">204 No Content</span></div>
+        <div class="ep-code" style="color:var(--muted)">(empty response body)</div>
+      </div>
+
+      <!-- ===== COMMENTS ===== -->
+      <h2 class="cat-heading">Comments</h2>
+
+      <!-- 19. create comment -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-post">POST</span>
+          <span class="ep-block-name">comment on post - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/comments/6a9422b69ac3901e01829814</span>
+        </div>
+        <div class="ep-block-body has-body"><div class="ep-section-label">Request Body</div><div class="ep-code">{
+  "content": "A test comment"
+}</div></div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Comment posted successfully"</span>
+}</div>
+      </div>
+
+      <!-- 20. get comments -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">get comments - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/comments/6a9422b69ac3901e01829814</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">[
+  {
+    <span class="key">"_id"</span>: <span class="string">"6a9422f29ac3901e01829815"</span>,
+    <span class="key">"postId"</span>: <span class="string">"6a9422b69ac3901e01829814"</span>,
+    <span class="key">"authorId"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+    <span class="key">"content"</span>: <span class="string">"A test comment"</span>,
+    <span class="key">"createdAt"</span>: <span class="string">"2026-08-30T12:32:50.551Z"</span>,
+    <span class="key">"__v"</span>: <span class="number">0</span>
+  }
+]</div>
+      </div>
+
+      <!-- 21. delete comment -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-delete">DELETE</span>
+          <span class="ep-block-name">delete comment - ahmed</span>
+          <span class="ep-block-url">http://localhost:3000/api/comments/6a9422b69ac3901e01829814/6a9422f29ac3901e01829815</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"Comment deleted successfully"</span>
+}</div>
+      </div>
+
+      <!-- ===== NOTIFICATIONS ===== -->
+      <h2 class="cat-heading">Notifications</h2>
+
+      <!-- 22. notifications -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-get">GET</span>
+          <span class="ep-block-name">notifications</span>
+          <span class="ep-block-url">http://localhost:3000/api/notifications/</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">[
+  {
+    <span class="key">"type"</span>: <span class="string">"follow"</span>,
+    <span class="key">"payload"</span>: {
+      <span class="key">"followerId"</span>: <span class="string">"48ff4fa5-2726-4fbd-bc20-87121af9f0f2"</span>,
+      <span class="key">"followerName"</span>: <span class="string">"ahmed_mohamed"</span>
+    },
+    <span class="key">"is_read"</span>: <span class="bool">true</span>,
+    <span class="key">"created_at"</span>: <span class="string">"2026-08-30T12:29:10.904456+00:00"</span>
+  }
+]</div>
+      </div>
+
+      <!-- 23. read notifications -->
+      <div class="ep-block">
+        <div class="ep-block-head">
+          <span class="ep-block-method m-patch">PATCH</span>
+          <span class="ep-block-name">read notifications</span>
+          <span class="ep-block-url">http://localhost:3000/api/notifications/read</span>
+        </div>
+        <div class="ep-no-body">No request body</div>
+        <div class="resp-meta-inline"><span class="ep-section-label" style="padding:0">Response</span> <span class="ep-status s-ok">200 OK</span></div>
+        <div class="ep-code">{
+  <span class="key">"message"</span>: <span class="string">"all marked as read successfully"</span>
+}</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== PAGE 2: TEST MANUAL ==================== -->
+  <div class="page" id="page-manual">
   <main class="shell layout"><nav class="nav" aria-label="Guide sections"><p>Navigate</p><a href="#launch">Launch sequence</a><a href="#account">Seed account</a><a href="#postman">Postman setup</a><a href="#endpoints">Endpoint board</a><a href="#checks">Pre-commit checks</a></nav><div>
     <section id="launch"><span class="eyebrow">01 / Ready the stack</span><h2>Launch sequence</h2><p class="intro">Run these once on a new machine. The API needs all three data services available before it starts.</p><ol class="steps"><li>Start Redis in Ubuntu WSL: <code>sudo service redis-server start</code></li><li>Start PostgreSQL and MongoDB, then configure your <code>.env</code> from <code>.env.example</code>.</li><li>Run the database migrations and load realistic test data.</li></ol><div class="command"><button class="copy" data-copy="npm run migrate&#10;npm run seed&#10;npm run dev">Copy</button>npm run migrate
 npm run seed
@@ -65,7 +585,23 @@ npm run dev</div></section>
       <article class="endpoint"><div class="endpoint-top"><span class="method delete">DELETE</span><input class="check" aria-label="Delete user tested" type="checkbox"></div><code class="path">http://localhost:3000/api/users/{{yourUserId}}</code><p>Throwaway account only this cannot be undone.</p></article>
     </div></section>
     <section id="checks"><span class="eyebrow">05 / Before you ship</span><h2>The three-command safety net</h2><div class="table-wrap"><table><thead><tr><th>Command</th><th>What it proves</th></tr></thead><tbody><tr><td><code>npm run check</code></td><td>Strict TypeScript validation.</td></tr><tr><td><code>npm test</code></td><td>Jest unit and integration-oriented tests.</td></tr><tr><td><code>npm run test:coverage</code></td><td>Tests plus an HTML coverage report in <code>coverage/</code>.</td></tr></tbody></table></div></section>
-  </div></main><footer class="shell footer"><span>Social API / Test Console</span><span>Keep the signal. Test the edges.</span></footer>
-  <script>document.querySelectorAll('.copy').forEach(button=>button.addEventListener('click',async()=>{await navigator.clipboard.writeText(button.dataset.copy);const original=button.textContent;button.textContent='Copied';setTimeout(()=>button.textContent=original,1200)}));</script>
+  </div></main></div>
+
+  <footer class="shell footer"><span>Social API / Test Console</span><span>Keep the signal. Test the edges.</span></footer>
+
+  <script>
+  /* ============ PAGE TABS ============ */
+  document.querySelectorAll('.page-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('page-' + tab.dataset.page).classList.add('active');
+    });
+  });
+
+  /* ============ COPY BUTTONS (original page) ============ */
+  document.querySelectorAll('.copy').forEach(button=>button.addEventListener('click',async()=>{await navigator.clipboard.writeText(button.dataset.copy);const original=button.textContent;button.textContent='Copied';setTimeout(()=>button.textContent=original,1200)}));
+  </script>
 </body>
 </html>

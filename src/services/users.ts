@@ -1,10 +1,9 @@
 import { HttpError } from "../errors/HttpError.js";
-import { addFollowing, deleteFollowing, deleteUserAccount, deleteUserRelated, fetchUserById, fetchUserRedis, getFollowers, updateUserBio } from "../repositories/users.js";
+import { addFollowing, deleteFollowing, deleteUserRelated, fetchUserById, fetchUserRedis, getFollowers, updateUserBio } from "../repositories/users.js";
 import type { User } from "../types/blueprints.js";
 import { publishNotification } from "../repositories/notifications.js";
 import { cacheUser, invalidateFeedCache, invalidateUserCache } from "../repositories/cache.js";
-import { deleteAllRefreshTokensForUser } from "./refreshToken.js";
-import { db } from "../connections/knex.js";
+import { deleteAuthUser } from "../repositories/auth.js";
 
 export const getUserDataById = async (userId: string) => {
     let user = await fetchUserRedis(userId);
@@ -33,14 +32,9 @@ export const updateUserBioById = async (userId: string, update: string): Promise
 export const deleteUserById = async (userId: string): Promise<void> => {
     await deleteUserRelated(userId);
 
-    await db.transaction(async (trx) => {
-        await deleteUserAccount(userId, trx);
-    });
+    await deleteAuthUser(userId);
 
-    await Promise.all([
-        invalidateUserCache(userId),
-        deleteAllRefreshTokensForUser(userId)
-    ]);
+    await invalidateUserCache(userId);
 };
 
 export const followUserById = async (follower_id: string, following_id: string): Promise<void> => {

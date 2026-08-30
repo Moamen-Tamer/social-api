@@ -1,11 +1,10 @@
 jest.mock("mongoose", () => ({ __esModule: true, default: { startSession: jest.fn() } }));
-jest.mock("../src/connections/knex.js", () => ({ db: { transaction: jest.fn() } }));
 jest.mock("../src/repositories/users.js", () => ({
     addFollowing: jest.fn(), deleteFollowing: jest.fn(), deleteUserAccount: jest.fn(), deleteUserRelated: jest.fn(), fetchUserById: jest.fn(), fetchUserRedis: jest.fn(), getFollowers: jest.fn(), updateUserBio: jest.fn()
 }));
 jest.mock("../src/repositories/cache.js", () => ({ cacheUser: jest.fn(), invalidateFeedCache: jest.fn(), invalidateUserCache: jest.fn(), cachePost: jest.fn(), invalidatePostCache: jest.fn() }));
 jest.mock("../src/repositories/notifications.js", () => ({ publishNotification: jest.fn() }));
-jest.mock("../src/services/refreshToken.js", () => ({ deleteAllRefreshTokensForUser: jest.fn() }));
+jest.mock("../src/repositories/auth.js", () => ({ deleteAuthUser: jest.fn() }));
 jest.mock("../src/repositories/follow.js", () => ({ getFollowersIds: jest.fn() }));
 jest.mock("../src/repositories/posts.js", () => ({ createPostMongo: jest.fn(), deletePostMongo: jest.fn(), editPostMongo: jest.fn(), fetchPostRedis: jest.fn(), getPostAuthor: jest.fn(), getPostMongo: jest.fn() }));
 jest.mock("../src/repositories/comments.js", () => ({ deleteCommentsOnPost: jest.fn(), getCommentsOnPost: jest.fn() }));

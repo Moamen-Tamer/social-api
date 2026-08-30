@@ -9,7 +9,6 @@ export const postComment = async (
 ): Promise<void> => {
     try {
         if (!req.user) throw new HttpError(401, "Authentication required");
-        if (typeof req.body.content !== "string" || !req.body.content.trim()) throw new HttpError(400, "Content is required");
 
         await createComment(req.user.id, req.params.id, req.body.content.trim());
 

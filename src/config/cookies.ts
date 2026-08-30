@@ -1,15 +1,17 @@
 import { env } from "./env.js";
 
-export const accessCookieOptions = {
+const baseCookieOptions = {
     httpOnly: true,
     secure: env.nodeEnv === "production",
-    sameSite: 'strict' as const,
-    maxAge: 1000 * 60 * 15
+    sameSite: "strict" as const
 };
 
+export const accessCookieOptions = (expiresInSeconds: number) => ({
+    ...baseCookieOptions,
+    maxAge: expiresInSeconds * 1000
+});
+
 export const refreshCookieOptions = {
-    httpOnly: true,
-    secure: env.nodeEnv === "production",
-    sameSite: 'strict' as const,
-    maxAge: 1000 * 60 * 60 * 24 * 7
+    ...baseCookieOptions,
+    maxAge: 1000 * 60 * 60 * 24 * 30
 };

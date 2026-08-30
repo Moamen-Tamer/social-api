@@ -1,9 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.js";
 import { accessCookieOptions, refreshCookieOptions } from "../config/cookies.js";
-import { HttpError } from "../errors/HttpError.js";
-import { generateAccessToken } from "../utils/jwt.js";
-import type { Payload } from "../types/blueprints.js";
 
 export const register = async (
     req: Request,
@@ -25,11 +22,9 @@ export const login = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        if (!req.body.email || !req.body.password) throw new HttpError(400, "All fields (email, password) are required");
+        const { user, accessToken, refreshToken, expiresIn } = await authService.login(req.body.email, req.body.password);
 
-        const { user, accessToken, refreshToken } = await authService.login(req.body.email, req.body.password);
-
-        res.cookie("accessToken", accessToken, accessCookieOptions);
+        res.cookie("accessToken", accessToken, accessCookieOptions(expiresIn));
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
         res.status(200).json({
@@ -51,9 +46,9 @@ export const logout = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const refreshToken = req.cookies.refreshToken;
+        const accessToken = req.cookies.accessToken;
 
-        if (req.user?.id) await authService.logout(req.user.id, refreshToken);
+        if (accessToken) await authService.logout(accessToken);
 
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken");
@@ -72,11 +67,10 @@ export const refresh = async (
     try {
         const refreshToken = req.cookies.refreshToken;
 
-        const user: Payload = await authService.validateToken(refreshToken);
+        const result = await authService.refreshSession(refreshToken);
 
-        const accessToken: string = generateAccessToken(user);
-
-        res.cookie("accessToken", accessToken, accessCookieOptions);
+        res.cookie("accessToken", result.accessToken, accessCookieOptions(result.expiresIn));
+        res.cookie("refreshToken", result.refreshToken, refreshCookieOptions);
 
         res.status(200).json({ message: "token has been refreshed" });
     } catch (error) {

@@ -1,16 +1,17 @@
-import chalk from "chalk";
 import type { Server } from "node:http";
 import { redis } from "../connections/redis.js";
 import mongoose from "mongoose";
 import { connectMongo } from "../connections/mongo.js";
 import { app } from "./app.js";
 import { env } from "../config/env.js";
-import { db } from "../connections/knex.js";
+import { logger } from "../config/logger.js";
+import { supabase } from "../connections/supabase.js";
+import { HttpError } from "../errors/HttpError.js";
 
 let server: Server | undefined;
 
 async function closeConnection(): Promise<void> {
-    console.log(chalk.yellow("Closing Connection..."));
+    logger.warn("Closing Connection...");
 
     if (server) {
         try{
@@ -20,33 +21,27 @@ async function closeConnection(): Promise<void> {
                 server!.close((error) => (error? reject(error) : resolve()));
             });
         } catch (error) {
-            console.error(chalk.red("Error closing HTTP server:"), error);
+            logger.error({ err: error }, "Error closing HTTP server");
         }
-    }
-
-    try { 
-        await db.destroy(); 
-    } catch (error) {
-        console.error(chalk.red("Error closing Postgres:"), error);
     }
 
     try { 
         await redis.quit(); 
     } catch (error) {
-        console.error(chalk.red("Error closing Redis:"), error);
+        logger.error({ err: error }, "Error closing Redis");
     }
 
     try { 
         await mongoose.disconnect(); 
     } catch (error) {
-        console.error(chalk.red("Error closing MongoDB:"), error);
+        logger.error({ err: error }, "Error closing MongoDB");
     }
 
-    console.log(chalk.green("All connections closed."));
+    logger.info("All connections closed.");
 };
 
 async function shutdown(signal: string): Promise<void> {
-  console.log(chalk.yellow(`${signal} received. Shutting down...`));
+  logger.warn(`${signal} received. Shutting down...`);
   await closeConnection();
   
   process.exit(0);
@@ -58,14 +53,17 @@ export async function startServer(): Promise<void> {
 
         await redis.ping();
 
-        await db.raw("SELECT 1")
-        console.log(chalk.green("Postgres connected"));
+        const { error } = await supabase.from("users").select("*", { count: "exact", head: true });
+
+        if (error) throw new HttpError(503, "Failed to establish a supabase connection.");
+
+        logger.info("Supabase connected");
 
         server = app.listen(env.serverPort, () => {
-            console.log(chalk.green(`Server running on port ${env.serverPort}`));
+            logger.info(`Server running on port ${env.serverPort}`);
         });
-    } catch (err) {
-        console.error(chalk.red("Startup failed:", err));
+    } catch (error) {
+        logger.error({ err: error }, "Startup failed");
         await closeConnection();
 
         process.exit(1);

@@ -1,11 +1,33 @@
+import "dotenv/config";
 import mongoose from "mongoose";
-import { db } from "../src/connections/knex.js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
 import { connectMongo } from "../src/connections/mongo.js";
 import { redis } from "../src/connections/redis.js";
 import Post from "../src/models/post.model.js";
 import Comment from "../src/models/comment.model.js";
 
-const passwordHash = "$2a$12$uwi67H2Fkt52TX1j89M4zuMzyHEbWqId2BfRFHmJvbDGOrnys7wfu";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error(
+        "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment variables"
+    );
+}
+
+const supabase: SupabaseClient = createClient(
+    supabaseUrl,
+    supabaseServiceRoleKey,
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    }
+);
+
+const SEED_PASSWORD = "password";
 
 const people = [
     ["ahmed_mohamed", "ahmedmohamed@gmail.com", "Building a social API and drinking far too much coffee."],
@@ -49,83 +71,299 @@ const postMessages = [
     "A good conversation can completely change the direction of a day."
 ];
 
-type SeedUser = { id: string; username: string; email: string };
+type SeedUser = {
+    id: string;
+    username: string;
+    email: string;
+};
+
+async function getExistingAuthUsers(): Promise<Map<string, string>> {
+    const usersByEmail = new Map<string, string>();
+
+    const { data, error } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000
+    });
+
+    if (error) {
+        throw new Error(`Failed to list Supabase Auth users: ${error.message}`);
+    }
+
+    for (const user of data.users) {
+        if (user.email) {
+            usersByEmail.set(user.email, user.id);
+        }
+    }
+
+    return usersByEmail;
+}
+
+async function createSeedUsers(): Promise<SeedUser[]> {
+    const existingUsers = await getExistingAuthUsers();
+    const users: SeedUser[] = [];
+
+    for (const [username, email, bio] of people) {
+        let userId = existingUsers.get(email);
+
+        if (!userId) {
+            const { data, error } = await supabase.auth.admin.createUser({
+                email,
+                password: SEED_PASSWORD,
+                email_confirm: true,
+                user_metadata: {
+                    username
+                }
+            });
+
+            if (error) {
+                throw new Error(
+                    `Failed to create Auth user ${email}: ${error.message}`
+                );
+            }
+
+            userId = data.user.id;
+            existingUsers.set(email, userId);
+        } else {
+            const { error } = await supabase.auth.admin.updateUserById(userId, {
+                password: SEED_PASSWORD,
+                user_metadata: {
+                    username
+                }
+            });
+
+            if (error) {
+                throw new Error(
+                    `Failed to update Auth user ${email}: ${error.message}`
+                );
+            }
+        }
+
+        /*
+         * The on_auth_user_created trigger creates this row for
+         * newly-created Auth users.
+         *
+         * The upsert also makes the seed idempotent for users that
+         * already existed before the seed was run.
+         */
+        const { data: profile, error: profileError } = await supabase
+            .from("users")
+            .upsert(
+                {
+                    id: userId,
+                    username,
+                    email,
+                    bio
+                },
+                {
+                    onConflict: "id"
+                }
+            )
+            .select("id, username, email")
+            .single();
+
+        if (profileError) {
+            throw new Error(
+                `Failed to create profile for ${email}: ${profileError.message}`
+            );
+        }
+
+        users.push(profile);
+    }
+
+    return users;
+}
 
 async function clearPreviousSeed(): Promise<void> {
-    const seededPosts = await Post.find({ tags: "seeded" }, { _id: 1 }).lean();
-    const postIds = seededPosts.map((post) => post._id.toString());
+    const { data: seededPosts, error: postsError } = await supabase
+        .from("posts")
+        .select("id")
+        .contains("tags", ["seeded"]);
+
+    /*
+     * If posts are stored in MongoDB, this query is intentionally
+     * not used. MongoDB is handled below.
+     */
+    void seededPosts;
+    void postsError;
+
+    const mongoSeededPosts = await Post.find(
+        { tags: "seeded" },
+        { _id: 1 }
+    ).lean();
+
+    const postIds = mongoSeededPosts.map((post) => post._id.toString());
 
     if (postIds.length > 0) {
         await Promise.all([
-            Comment.deleteMany({ postId: { $in: postIds } }),
-            Post.deleteMany({ _id: { $in: postIds } }),
-            db("likes").whereIn("post_id", postIds).del(),
-            redis.del(...postIds.flatMap((id) => [`post:${id}`, `comment:${id}`]))
+            Comment.deleteMany({
+                postId: { $in: postIds }
+            }),
+
+            Post.deleteMany({
+                _id: { $in: postIds }
+            }),
+
+            supabase
+                .from("likes")
+                .delete()
+                .in("post_id", postIds),
+
+            redis.del(
+                ...postIds.flatMap((id) => [
+                    `post:${id}`,
+                    `comment:${id}`
+                ])
+            )
         ]);
     }
 
-    await db("notifications").whereRaw("payload->>'seed' = ?", ["true"]).del();
+    const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .contains("payload", { seed: true });
+
+    if (error) {
+        throw new Error(
+            `Failed to clear seeded notifications: ${error.message}`
+        );
+    }
 }
 
 async function seed(): Promise<void> {
     await connectMongo();
     await redis.ping();
-    await db.raw("SELECT 1");
+
+    const { error: databaseError } = await supabase
+        .from("users")
+        .select("id")
+        .limit(1);
+
+    if (databaseError) {
+        throw new Error(
+            `Failed to connect to Supabase: ${databaseError.message}`
+        );
+    }
+
     await clearPreviousSeed();
 
-    const users: SeedUser[] = [];
-    for (const [username, email, bio] of people) {
-        const [user] = await db<SeedUser>("users")
-            .insert({ username, email, password_hash: passwordHash, bio })
-            .onConflict("email")
-            .merge({ username, password_hash: passwordHash, bio })
-            .returning(["id", "username", "email"]);
-        users.push(user!);
-    }
+    const users = await createSeedUsers();
 
     for (let index = 0; index < users.length; index += 1) {
         const follower = users[index]!;
         const following = users[(index + 1) % users.length]!;
         const extraFollowing = users[(index + 7) % users.length]!;
-        await db("follows")
-            .insert([
-                { follower_id: follower.id, following_id: following.id },
-                { follower_id: follower.id, following_id: extraFollowing.id }
-            ])
-            .onConflict(["follower_id", "following_id"])
-            .ignore();
+
+        const { error } = await supabase
+            .from("follows")
+            .upsert(
+                [
+                    {
+                        follower_id: follower.id,
+                        following_id: following.id
+                    },
+                    {
+                        follower_id: follower.id,
+                        following_id: extraFollowing.id
+                    }
+                ],
+                {
+                    onConflict: "follower_id,following_id",
+                    ignoreDuplicates: true
+                }
+            );
+
+        if (error) {
+            throw new Error(
+                `Failed to seed follows: ${error.message}`
+            );
+        }
     }
 
-    const posts = [] as Array<{ id: string; authorId: string }>;
+    const posts: Array<{
+        id: string;
+        authorId: string;
+    }> = [];
+
     for (let index = 0; index < users.length; index += 1) {
         const author = users[index]!;
+
         for (let offset = 0; offset < 2; offset += 1) {
             const post = await Post.create({
                 authorId: author.id,
-                content: postMessages[(index + offset) % postMessages.length]!,
-                tags: ["seeded", offset === 0 ? "daily-life" : "testing"],
-                mediaUrls: offset === 0 ? [`https://images.example.com/seed/${index + 1}.jpg`] : []
+                content:
+                    postMessages[
+                        (index + offset) % postMessages.length
+                    ]!,
+                tags: [
+                    "seeded",
+                    offset === 0 ? "daily-life" : "testing"
+                ],
+                mediaUrls:
+                    offset === 0
+                        ? [
+                              `https://images.example.com/seed/${
+                                  index + 1
+                              }.jpg`
+                          ]
+                        : []
             });
-            posts.push({ id: post.id, authorId: author.id });
+
+            posts.push({
+                id: post.id,
+                authorId: author.id
+            });
         }
     }
 
     for (let index = 0; index < posts.length; index += 1) {
         const post = posts[index]!;
-        const firstCommenter = users[(index + 3) % users.length]!;
-        const secondCommenter = users[(index + 11) % users.length]!;
+
+        const firstCommenter =
+            users[(index + 3) % users.length]!;
+
+        const secondCommenter =
+            users[(index + 11) % users.length]!;
+
         await Comment.insertMany([
-            { postId: post.id, authorId: firstCommenter.id, content: "This is exactly the kind of update I needed to read today." },
-            { postId: post.id, authorId: secondCommenter.id, content: "Love this. Keep sharing your progress!" }
+            {
+                postId: post.id,
+                authorId: firstCommenter.id,
+                content:
+                    "This is exactly the kind of update I needed to read today."
+            },
+            {
+                postId: post.id,
+                authorId: secondCommenter.id,
+                content:
+                    "Love this. Keep sharing your progress!"
+            }
         ]);
 
         for (const likerOffset of [2, 9, 16]) {
-            const liker = users[(index + likerOffset) % users.length]!;
-            if (liker.id !== post.authorId) {
-                await db("likes")
-                    .insert({ user_id: liker.id, post_id: post.id })
-                    .onConflict(["user_id", "post_id"])
-                    .ignore();
+            const liker =
+                users[(index + likerOffset) % users.length]!;
+
+            if (liker.id === post.authorId) {
+                continue;
+            }
+
+            const { error } = await supabase
+                .from("likes")
+                .upsert(
+                    {
+                        user_id: liker.id,
+                        post_id: post.id
+                    },
+                    {
+                        onConflict: "user_id,post_id",
+                        ignoreDuplicates: true
+                    }
+                );
+
+            if (error) {
+                throw new Error(
+                    `Failed to seed like: ${error.message}`
+                );
             }
         }
     }
@@ -133,21 +371,50 @@ async function seed(): Promise<void> {
     for (let index = 0; index < users.length; index += 1) {
         const recipient = users[index]!;
         const actor = users[(index + 4) % users.length]!;
-        await db("notifications").insert({
-            user_id: recipient.id,
-            type: "follow",
-            payload: { seed: true, followerId: actor.id, followerName: actor.username },
-            is_read: index % 3 === 0
-        });
-        await redis.del(`user:${recipient.id}`, `feed:${recipient.id}`, `notifications:${recipient.id}`);
+
+        const { error } = await supabase
+            .from("notifications")
+            .insert({
+                user_id: recipient.id,
+                type: "follow",
+                payload: {
+                    seed: true,
+                    followerId: actor.id,
+                    followerName: actor.username
+                },
+                is_read: index % 3 === 0
+            });
+
+        if (error) {
+            throw new Error(
+                `Failed to seed notification: ${error.message}`
+            );
+        }
+
+        await redis.del(
+            `user:${recipient.id}`,
+            `feed:${recipient.id}`,
+            `notifications:${recipient.id}`
+        );
     }
 
-    console.log(`Seed complete: ${users.length} users, ${posts.length} posts, ${posts.length * 2} comments, and sample likes/follows/notifications.`);
-    console.log("All seed accounts use password: password");
+    console.log(
+        `Seed complete: ${users.length} users, ` +
+        `${posts.length} posts, ` +
+        `${posts.length * 2} comments, ` +
+        `and sample likes/follows/notifications.`
+    );
+
+    console.log(
+        `All seed accounts use password: ${SEED_PASSWORD}`
+    );
 }
 
 try {
     await seed();
 } finally {
-    await Promise.allSettled([db.destroy(), redis.quit(), mongoose.disconnect()]);
+    await Promise.allSettled([
+        redis.quit(),
+        mongoose.disconnect()
+    ]);
 }

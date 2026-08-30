@@ -34,7 +34,11 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "success": true
+        }
+      ]
     },
     {
       "name": "login - moamen",
@@ -43,7 +47,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"email\": \"moamenmosa288@gmail.com\",\r\n    \"password\": \"moamen288*\"\r\n}",
+          "raw": "{\r\n  \"email\": \"moamenmosa288@gmail.com\",\r\n  \"password\": \"moamen288*\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -64,7 +68,16 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Login successful.",
+          "user": {
+              "id": "4eb40f75-c8b4-461d-95db-91c6f5abd7d8",
+              "username": "moamen tamer",
+              "email": "moamenmosa288@gmail.com"
+          }
+        }
+      ]
     },
     {
       "name": "refresh - moamen",
@@ -85,7 +98,11 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "token has been refreshed"
+        }
+      ]
     },
     {
       "name": "logout",
@@ -106,7 +123,11 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Logout successful."
+        }
+      ]
     },
     {
       "name": "login - ahmed",
@@ -136,7 +157,16 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Login successful.",
+          "user": {
+            "id": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+            "username": "ahmed_mohamed",
+            "email": "ahmedmohamed@gmail.com"
+          }
+        }
+      ]
     },
     {
       "name": "user account - ahmed",
@@ -144,7 +174,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb",
+          "raw": "http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
           "protocol": "http",
           "host": [
             "localhost"
@@ -153,11 +183,20 @@
           "path": [
             "api",
             "users",
-            "6637060d-ac40-473c-bf45-765a7c4667cb"
+            "48ff4fa5-2726-4fbd-bc20-87121af9f0f2"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "user": {
+            "id": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+            "username": "ahmed_mohamed",
+            "bio": "Building a social API",
+            "created_at": "2026-08-26T12:34:30.776671+00:00"
+          }
+        }
+      ]
     },
     {
       "name": "update bio - ahmed",
@@ -174,7 +213,7 @@
           }
         },
         "url": {
-          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb",
+          "raw": "http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
           "protocol": "http",
           "host": [
             "localhost"
@@ -183,11 +222,18 @@
           "path": [
             "api",
             "users",
-            "6637060d-ac40-473c-bf45-765a7c4667cb"
+            "48ff4fa5-2726-4fbd-bc20-87121af9f0f2"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "id": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+          "username": "ahmed_mohamed",
+          "email": "ahmedmohamed@gmail.com",
+          "bio": "Building a social API"
+        }
+      ]
     },
     {
       "name": "follow - ahmed => moamen",
@@ -196,10 +242,15 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"update\": \"Building a social API\"\r\n}"
+          "raw": "{\r\n    \"update\": \"Building a social API\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "text"
+            }
+          }
         },
         "url": {
-          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa/follow",
+          "raw": "http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8/follow",
           "protocol": "http",
           "host": [
             "localhost"
@@ -208,12 +259,16 @@
           "path": [
             "api",
             "users",
-            "51103afb-3295-4194-b347-8a4e91afaefa",
+            "4eb40f75-c8b4-461d-95db-91c6f5abd7d8",
             "follow"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "followed successfully"
+        }
+      ]
     },
     {
       "name": "notifications",
@@ -241,7 +296,19 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        [
+          {
+            "type": "follow",
+            "payload": {
+              "followerId": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+              "followerName": "ahmed_mohamed"
+            },
+            "is_read": true,
+            "created_at": "2026-08-30T12:29:10.904456+00:00"
+          }
+        ]
+      ]
     },
     {
       "name": "read notifications",
@@ -262,7 +329,11 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "all marked as read successfully"
+        }
+      ]
     },
     {
       "name": "follow - ahmed x> moamen",
@@ -271,10 +342,15 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "text"
+            }
+          }
         },
         "url": {
-          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa/follow",
+          "raw": "http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8/follow",
           "protocol": "http",
           "host": [
             "localhost"
@@ -283,12 +359,16 @@
           "path": [
             "api",
             "users",
-            "51103afb-3295-4194-b347-8a4e91afaefa",
+            "4eb40f75-c8b4-461d-95db-91c6f5abd7d8",
             "follow"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "unfollowed successfully"
+        }
+      ]
     },
     {
       "name": "followers - ahmed",
@@ -300,10 +380,15 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}"
+          "raw": "{\r\n    \"email\": \"ahmedmohamed@gmail.com\",\r\n    \"password\": \"password\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "text"
+            }
+          }
         },
         "url": {
-          "raw": "http://localhost:3000/api/users/6637060d-ac40-473c-bf45-765a7c4667cb/followers",
+          "raw": "http://localhost:3000/api/users/48ff4fa5-2726-4fbd-bc20-87121af9f0f2/followers",
           "protocol": "http",
           "host": [
             "localhost"
@@ -312,12 +397,27 @@
           "path": [
             "api",
             "users",
-            "6637060d-ac40-473c-bf45-765a7c4667cb",
+            "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
             "followers"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "followers": [
+            {
+              "id": "6befd90f-9845-4ee3-8d83-9a64eb038d75",
+              "bio": "Operations manager and early-morning swimmer.",
+              "username": "adel_samir"
+            },
+            {
+              "id": "1d49d267-b964-4d5d-8632-1cd903ccb54f",
+              "bio": "HR specialist and plant parent.",
+              "username": "menna_hossam"
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "feed - ahmed",
@@ -345,7 +445,138 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        [
+          {
+            "_id": "6a8edd635a83289e3a5277cd",
+            "authorId": "c0bbd40a-cd83-4ceb-925a-c5bcbc9ed90f",
+            "content": "Today’s reminder: write the test before calling a bug fixed.",
+            "mediaUrls": [],
+            "tags": [
+              "seeded",
+              "testing"
+            ],
+            "createdAt": "2026-08-26T12:34:43.739Z",
+            "__v": 0,
+            "likes": 3,
+            "comments": [
+              {
+                "_id": "6a8edd6c5a83289e3a527818",
+                "postId": "6a8edd635a83289e3a5277cd",
+                "authorId": "fa488a48-c320-4c9e-838d-d89ab019c33a",
+                "content": "This is exactly the kind of update I needed to read today.",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:52.606Z"
+              },
+              {
+                "_id": "6a8edd6c5a83289e3a527819",
+                "postId": "6a8edd635a83289e3a5277cd",
+                "authorId": "01c0fc22-29bb-43d0-8bfd-8a47f05ecc08",
+                "content": "Love this. Keep sharing your progress!",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:52.606Z"
+              }
+            ]
+          },
+          {
+            "_id": "6a8edd635a83289e3a5277cc",
+            "authorId": "c0bbd40a-cd83-4ceb-925a-c5bcbc9ed90f",
+            "content": "A walk after work fixes more problems than I expect every time.",
+            "mediaUrls": [
+              "https://images.example.com/seed/8.jpg"
+            ],
+            "tags": [
+              "seeded",
+              "daily-life"
+            ],
+            "createdAt": "2026-08-26T12:34:43.676Z",
+            "__v": 0,
+            "likes": 3,
+            "comments": [
+              {
+                "_id": "6a8edd6c5a83289e3a527816",
+                "postId": "6a8edd635a83289e3a5277cc",
+                "authorId": "75ab7acb-6e8d-4073-934a-15f743bb87a0",
+                "content": "This is exactly the kind of update I needed to read today.",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:52.239Z"
+              },
+              {
+                "_id": "6a8edd6c5a83289e3a527817",
+                "postId": "6a8edd635a83289e3a5277cc",
+                "authorId": "d6099ea7-8051-4b89-a297-6f5a5dc37621",
+                "content": "Love this. Keep sharing your progress!",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:52.239Z"
+              }
+            ]
+          },
+          {
+            "_id": "6a8edd625a83289e3a5277c1",
+            "authorId": "966101af-3cfd-4dac-8c7a-1fe63dd74dba",
+            "content": "Today’s reminder: write the test before calling a bug fixed.",
+            "mediaUrls": [],
+            "tags": [
+              "seeded",
+              "testing"
+            ],
+            "createdAt": "2026-08-26T12:34:42.946Z",
+            "__v": 0,
+            "likes": 3,
+            "comments": [
+              {
+                "_id": "6a8edd685a83289e3a527800",
+                "postId": "6a8edd625a83289e3a5277c1",
+                "authorId": "adcc2fcd-67ff-4f4f-bb80-e4fb107d7697",
+                "content": "This is exactly the kind of update I needed to read today.",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:48.324Z"
+              },
+              {
+                "_id": "6a8edd685a83289e3a527801",
+                "postId": "6a8edd625a83289e3a5277c1",
+                "authorId": "c56f4a52-4b98-4edf-b428-79de9b588305",
+                "content": "Love this. Keep sharing your progress!",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:48.324Z"
+              }
+            ]
+          },
+          {
+            "_id": "6a8edd625a83289e3a5277c0",
+            "authorId": "966101af-3cfd-4dac-8c7a-1fe63dd74dba",
+            "content": "A walk after work fixes more problems than I expect every time.",
+            "mediaUrls": [
+              "https://images.example.com/seed/2.jpg"
+            ],
+            "tags": [
+              "seeded",
+              "daily-life"
+            ],
+            "createdAt": "2026-08-26T12:34:42.877Z",
+            "__v": 0,
+            "likes": 3,
+            "comments": [
+              {
+                "_id": "6a8edd675a83289e3a5277fe",
+                "postId": "6a8edd625a83289e3a5277c0",
+                "authorId": "09f2a80c-f48b-436d-b810-b1ab4b4663ac",
+                "content": "This is exactly the kind of update I needed to read today.",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:47.943Z"
+              },
+              {
+                "_id": "6a8edd675a83289e3a5277ff",
+                "postId": "6a8edd625a83289e3a5277c0",
+                "authorId": "e8a77f57-69d5-4fc0-b54b-3272a9b50f08",
+                "content": "Love this. Keep sharing your progress!",
+                "__v": 0,
+                "createdAt": "2026-08-26T12:34:47.943Z"
+              }
+            ]
+          }
+        ]
+      ]
     },
     {
       "name": "post - ahmed",
@@ -375,7 +606,17 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "authorId": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+          "content": "My Postman test post",
+          "mediaUrls": [],
+          "tags": [],
+          "_id": "6a9422b69ac3901e01829814",
+          "createdAt": "2026-08-30T12:31:50.642Z",
+          "__v": 0
+        }
+      ]
     },
     {
       "name": "post - ahmed",
@@ -383,7 +624,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "raw": "http://localhost:3000/api/posts/6a9422b69ac3901e01829814",
           "protocol": "http",
           "host": [
             "localhost"
@@ -392,11 +633,24 @@
           "path": [
             "api",
             "posts",
-            "6a6638114d9ec28cfaaa24c3"
+            "6a9422b69ac3901e01829814"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "id": "6a9422b69ac3901e01829814",
+          "author": {
+            "id": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+            "username": "ahmed_mohamed"
+          },
+          "content": "My Postman test post",
+          "mediaUrls": [],
+          "tags": [],
+          "likesCount": 0,
+          "comments": []
+        }
+      ]
     },
     {
       "name": "update post content - ahmed",
@@ -413,7 +667,7 @@
           }
         },
         "url": {
-          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "raw": "http://localhost:3000/api/posts/6a9422b69ac3901e01829814",
           "protocol": "http",
           "host": [
             "localhost"
@@ -422,11 +676,21 @@
           "path": [
             "api",
             "posts",
-            "6a6638114d9ec28cfaaa24c3"
+            "6a9422b69ac3901e01829814"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "_id": "6a9422b69ac3901e01829814",
+          "authorId": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+          "content": "My edited Postman test post",
+          "mediaUrls": [],
+          "tags": [],
+          "createdAt": "2026-08-30T12:31:50.642Z",
+          "__v": 0
+        }
+      ]
     },
     {
       "name": "like a post - ahmed",
@@ -434,7 +698,7 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3/like",
+          "raw": "http://localhost:3000/api/posts/6a9422b69ac3901e01829814/like",
           "protocol": "http",
           "host": [
             "localhost"
@@ -443,12 +707,17 @@
           "path": [
             "api",
             "posts",
-            "6a6638114d9ec28cfaaa24c3",
+            "6a9422b69ac3901e01829814",
             "like"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Post liked successfully",
+          "likes": 1
+        }
+      ]
     },
     {
       "name": "unlike a post - ahmed",
@@ -456,7 +725,7 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3/like",
+          "raw": "http://localhost:3000/api/posts/6a9422b69ac3901e01829814/like",
           "protocol": "http",
           "host": [
             "localhost"
@@ -465,12 +734,17 @@
           "path": [
             "api",
             "posts",
-            "6a6638114d9ec28cfaaa24c3",
+            "6a9422b69ac3901e01829814",
             "like"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Post unliked successfully",
+          "likes": 0
+        }
+      ]
     },
     {
       "name": "comment on a post - ahmed",
@@ -487,7 +761,7 @@
           }
         },
         "url": {
-          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3",
+          "raw": "http://localhost:3000/api/comments/6a9422b69ac3901e01829814",
           "protocol": "http",
           "host": [
             "localhost"
@@ -496,11 +770,15 @@
           "path": [
             "api",
             "comments",
-            "6a6638114d9ec28cfaaa24c3"
+            "6a9422b69ac3901e01829814"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Comment posted successfully"
+        }
+      ]
     },
     {
       "name": "comment data - ahmed",
@@ -508,7 +786,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3",
+          "raw": "http://localhost:3000/api/comments/6a9422b69ac3901e01829814",
           "protocol": "http",
           "host": [
             "localhost"
@@ -517,11 +795,22 @@
           "path": [
             "api",
             "comments",
-            "6a6638114d9ec28cfaaa24c3"
+            "6a9422b69ac3901e01829814"
           ]
         }
       },
-      "response": []
+      "response": [
+        [
+          {
+            "_id": "6a9422f29ac3901e01829815",
+            "postId": "6a9422b69ac3901e01829814",
+            "authorId": "48ff4fa5-2726-4fbd-bc20-87121af9f0f2",
+            "content": "A test comment",
+            "createdAt": "2026-08-30T12:32:50.551Z",
+            "__v": 0
+          }
+        ]
+      ]
     },
     {
       "name": "delete comment - ahmed",
@@ -529,7 +818,7 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/comments/6a6638114d9ec28cfaaa24c3/6a663a604d9ec28cfaaa24c4",
+          "raw": "http://localhost:3000/api/comments/6a9422b69ac3901e01829814/6a9422f29ac3901e01829815",
           "protocol": "http",
           "host": [
             "localhost"
@@ -538,12 +827,16 @@
           "path": [
             "api",
             "comments",
-            "6a6638114d9ec28cfaaa24c3",
-            "6a663a604d9ec28cfaaa24c4"
+            "6a9422b69ac3901e01829814",
+            "6a9422f29ac3901e01829815"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "Comment deleted successfully"
+        }
+      ]
     },
     {
       "name": "delete post - ahmed",
@@ -551,7 +844,7 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/posts/6a6638114d9ec28cfaaa24c3",
+          "raw": "http://localhost:3000/api/posts/6a9422b69ac3901e01829814",
           "protocol": "http",
           "host": [
             "localhost"
@@ -560,19 +853,19 @@
           "path": [
             "api",
             "posts",
-            "6a6638114d9ec28cfaaa24c3"
+            "6a9422b69ac3901e01829814"
           ]
         }
       },
       "response": []
     },
     {
-      "name": "New Request",
+      "name": "delete - moamen",
       "request": {
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/users/51103afb-3295-4194-b347-8a4e91afaefa",
+          "raw": "http://localhost:3000/api/users/4eb40f75-c8b4-461d-95db-91c6f5abd7d8",
           "protocol": "http",
           "host": [
             "localhost"
@@ -581,11 +874,15 @@
           "path": [
             "api",
             "users",
-            "51103afb-3295-4194-b347-8a4e91afaefa"
+            "4eb40f75-c8b4-461d-95db-91c6f5abd7d8"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "message": "User deleted successfully"
+        }
+      ]
     }
   ]
 }

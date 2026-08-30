@@ -11,7 +11,7 @@ mongoose.connection.on("error", (error: Error) => {
 });
 
 export const connectMongo = async (): Promise<void> => {
-    await mongoose.connect(env.mongoUri, {
+    await mongoose.connect(env.mongoAtlasUri, {
         autoIndex: false,
         autoCreate: false   
     });

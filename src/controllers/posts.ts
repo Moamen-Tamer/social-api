@@ -9,8 +9,15 @@ export const createPost = async (
 ): Promise<void> => {
     try {
         if (!req.user) throw new HttpError(401, "Authentication required");
-        if (typeof req.body.content !== "string" || !req.body.content.trim()) throw new HttpError(400, "Content is required.");
-        const post = await createPostById(req.user.id, { ...req.body, content: req.body.content.trim() });
+
+        const content = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+
+        if (!content) throw new HttpError(400, "Content is required.");
+
+        const post = await createPostById(req.user.id, {
+            ...req.body,
+            content
+        });
 
         res.status(201).json(post);
     } catch (error) {
@@ -39,9 +46,12 @@ export const editPost = async (
 ): Promise<void> => {
     try {
         if (!req.user) throw new HttpError(401, "Authentication required");
-        if (typeof req.body.content !== "string" || !req.body.content.trim()) throw new HttpError(400, "Content is required.");
 
-        const post = await editPostById(req.user.id, req.params.id, req.body.content.trim());
+        const content = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+
+        if (!content) throw new HttpError(400, "Content is required.");
+
+        const post = await editPostById(req.user.id, req.params.id, content);
 
         res.status(200).json(post);
     } catch (error) {

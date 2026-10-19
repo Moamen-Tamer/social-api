@@ -69,3 +69,5 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+
+AGENTS.md

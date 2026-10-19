@@ -13,8 +13,11 @@ import { limiter } from "../middleware/limiter.js";
 import { logger } from "../middleware/logger.js";
 import { notFound } from "../middleware/notFound.js";
 import { errorHandler } from "../middleware/error.js";
+import cors from "cors";
 
 export const app: Express = express();
+
+app.use(cors());
 
 // body parser middlewares
 app.use(express.json());

@@ -1,4 +1,4 @@
-import type { NextFunction, ParamsDictionary, Request, RequestHandler, Response } from "express-serve-static-core";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 import type z from "zod";
 import { ZodError } from "zod";
 import { HttpError } from "../errors/HttpError.js";
@@ -17,7 +17,7 @@ export const validate = (schema: z.ZodType): RequestHandler => {
             })) as { body?: unknown, query?: unknown, params?: unknown };
             
             req.body = parsed.body;
-            req.params = (parsed.params ?? req.params) as ParamsDictionary;
+            req.params = (parsed.params ?? req.params) as Request["params"];
             req.validated = parsed;
 
             next();

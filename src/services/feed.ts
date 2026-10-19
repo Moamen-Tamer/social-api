@@ -5,10 +5,10 @@ import { getFollowings } from "../repositories/follow.js";
 import { getLikes } from "../repositories/likes.js";
 import { getPostByAuthor } from "../repositories/posts.js";
 
-export const fillFeed = async (userId: string) => {
+export const fillFeed = async (userId: string, limit?: number) => {
     const feedRedis = await getFeedRedis(userId);
 
-    if (feedRedis) return feedRedis;
+    if (feedRedis) return limit ? feedRedis.slice(0, limit) : feedRedis;
 
     const followings = await getFollowings(userId);
 
@@ -45,5 +45,5 @@ export const fillFeed = async (userId: string) => {
         console.error(error);
     }
 
-    return feed;
+    return limit ? feed.slice(0, limit) : feed;
 };

@@ -164,6 +164,7 @@ social-api/
 │   ├── services.test.ts
 │   └── utils-and-middleware.test.ts
 ├── TESTING.html             # Interactive endpoint checklist (open in browser)
+├── API-REFERENCE.html       # Dark-mode response reference for every endpoint (open in browser)
 ├── .env.example
 ├── jest.config.cjs
 ├── tsconfig.json
@@ -381,6 +382,8 @@ social-api_postman_collection.json
 4. After creating a post, copy its `_id` into a `postId` variable.
 
 For a full interactive walkthrough of every endpoint (with a visual checklist), open **[TESTING.html](https://moamen-tamer.github.io/social-api/TESTING.html)** in your browser.
+
+For the exact success payloads, status codes, cookie behavior, and error strings each endpoint returns — as a dark-mode reference a frontend team can integrate against — open **API-REFERENCE.html** in your browser.
 
 ---
 
